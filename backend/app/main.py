@@ -30,9 +30,29 @@ async def lifespan(app: FastAPI):
     settings = get_settings()
     _configure_logging(settings.log_level)
 
-    # Phase 1 will initialize ConfigCache here and call auth.admin.set_config_cache()
+    # Initialize ConfigCache and share with auth + clients
+    from app.db import get_session_factory
+    from app.services.config_service import ConfigCache
+    from app.auth import admin as auth_admin
+    from app.clients import oceansx as oceansx_client
 
-    yield
+    config_cache = ConfigCache()
+    async with get_session_factory()() as session:
+        await config_cache.warm(session)
+
+    auth_admin.set_config_cache(config_cache)
+    oceansx_client.set_config_cache(config_cache)
+    app.state.config_cache = config_cache
+
+    from app.scheduler import build_scheduler
+    scheduler = build_scheduler()
+    scheduler.start()
+    app.state.scheduler = scheduler
+
+    try:
+        yield
+    finally:
+        scheduler.shutdown(wait=False)
 
 
 def create_app() -> FastAPI:
@@ -63,6 +83,13 @@ def create_app() -> FastAPI:
         duration = time.perf_counter() - start
         record_inbound(request.method, request.url.path, response.status_code, duration)
         return response
+
+    # Phase 1 routers
+    from app.routers import vessels, sse, history, meta
+    app.include_router(vessels.router, prefix="/api")
+    app.include_router(sse.router, prefix="/api")
+    app.include_router(history.router, prefix="/api")
+    app.include_router(meta.router, prefix="/api")
 
     @app.get("/api/health", tags=["meta"])
     async def health():
