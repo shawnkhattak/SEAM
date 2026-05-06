@@ -1,0 +1,13 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {"name": "Southern Coastline", "type": "coastline"},
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [[103.62, 1.26], [103.70, 1.28], [103.82, 1.27], [103.87, 1.30], [104.04, 1.34]]
+      }
+    }
+  ]
+}

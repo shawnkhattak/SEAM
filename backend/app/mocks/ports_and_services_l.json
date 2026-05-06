@@ -1,0 +1,21 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {"name": "East Jurong Fairway", "type": "fairway"},
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [[103.68, 1.22], [103.70, 1.25], [103.72, 1.27]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {"name": "Eastern Petroleum Anchorage Boundary", "type": "anchorage_boundary"},
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [[104.00, 1.20], [104.05, 1.22], [104.08, 1.25]]
+      }
+    }
+  ]
+}

@@ -1,0 +1,9 @@
+[
+  {"vesselParticulars":{"vesselName":"PACIFIC DAWN","callSign":"SVDF1","imoNumber":"9871234","flag":"GR"},"duetoArriveTime":"2026-04-26 13:40:00","locationFrom":"SEA","locationTo":"PWBGB"},
+  {"vesselParticulars":{"vesselName":"MAERSK SELETAR","callSign":"OXAB2","imoNumber":"9789012","flag":"DK"},"duetoArriveTime":"2026-04-26 15:10:00","locationFrom":"SEA","locationTo":"PEAS"},
+  {"vesselParticulars":{"vesselName":"CSCL PACIFIC OCEAN","callSign":"VRGR9","imoNumber":"9698756","flag":"CN"},"duetoArriveTime":"2026-04-26 16:30:00","locationFrom":"SEA","locationTo":"PWBGB"},
+  {"vesselParticulars":{"vesselName":"SAKURA SPIRIT","callSign":"7KTQ","imoNumber":"9543219","flag":"JP"},"duetoArriveTime":"2026-04-26 14:20:00","locationFrom":"SEA","locationTo":"PJUR"},
+  {"vesselParticulars":{"vesselName":"ATLANTIC HARMONY","callSign":"SVDA8","imoNumber":"9321876","flag":"GR"},"duetoArriveTime":"2026-04-26 17:45:00","locationFrom":"SEA","locationTo":"PEAS"},
+  {"vesselParticulars":{"vesselName":"STENA PREMIUM","callSign":"SDXM4","imoNumber":"9456789","flag":"SE"},"duetoArriveTime":"2026-04-26 14:55:00","locationFrom":"SEA","locationTo":"PJUR"},
+  {"vesselParticulars":{"vesselName":"GOLDEN RAY","callSign":"V7AB1","imoNumber":"9876012","flag":"MH"},"duetoArriveTime":"2026-04-26 17:10:00","locationFrom":"SEA","locationTo":"PWBGB"}
+]

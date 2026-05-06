@@ -1,0 +1,15 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {"name": "Wreck: SS Taiseiyo", "type": "wreck", "hazardCode": "WR"},
+      "geometry": {"type": "Point", "coordinates": [103.96, 1.18]}
+    },
+    {
+      "type": "Feature",
+      "properties": {"name": "Obstruction", "type": "obstruction", "hazardCode": "OB"},
+      "geometry": {"type": "Point", "coordinates": [103.88, 1.22]}
+    }
+  ]
+}

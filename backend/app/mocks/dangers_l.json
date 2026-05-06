@@ -1,0 +1,13 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {"name": "Prohibited Cable Zone", "type": "cable_zone"},
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [[103.80, 1.22], [103.82, 1.24], [103.84, 1.23]]
+      }
+    }
+  ]
+}

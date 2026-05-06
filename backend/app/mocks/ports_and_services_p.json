@@ -1,0 +1,20 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {"name": "Jurong Port Pilot Boarding Station", "type": "pilot_boarding"},
+      "geometry": {"type": "Point", "coordinates": [103.68, 1.20]}
+    },
+    {
+      "type": "Feature",
+      "properties": {"name": "Eastern Anchorage Pilot Station", "type": "pilot_boarding"},
+      "geometry": {"type": "Point", "coordinates": [104.02, 1.22]}
+    },
+    {
+      "type": "Feature",
+      "properties": {"name": "Raffles Lighthouse", "type": "lighthouse"},
+      "geometry": {"type": "Point", "coordinates": [103.75, 1.17]}
+    }
+  ]
+}

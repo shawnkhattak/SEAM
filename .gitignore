@@ -30,3 +30,12 @@ Thumbs.db
 
 # Alembic
 alembic/versions/__pycache__/
+
+# TypeScript
+*.tsbuildinfo
+
+# Env files (keep examples)
+.env
+.env.local
+.env.production
+!.env.example

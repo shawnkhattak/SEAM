@@ -1,0 +1,13 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {"name": "Sultan Shoal", "type": "shoal", "hazardCode": "SH"},
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[103.74, 1.20], [103.76, 1.20], [103.76, 1.21], [103.74, 1.21], [103.74, 1.20]]]
+      }
+    }
+  ]
+}

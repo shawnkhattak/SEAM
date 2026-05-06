@@ -1,0 +1,92 @@
+{
+  "datasets": ["sanctions", "ru_nsd_sdn", "us_ofac_sdn"],
+  "updated_at": "2026-05-01T03:00:00Z",
+  "entity_count": 5,
+  "entities": [
+    {
+      "id": "NK-abc123",
+      "caption": "NORD SEA TANKER",
+      "schema": "Vessel",
+      "properties": {
+        "name": ["NORD SEA TANKER", "NST 1"],
+        "imoNumber": ["9876543"],
+        "mmsi": ["636019123"],
+        "flag": ["LR"],
+        "buildDate": ["2008"],
+        "type": ["Oil Tanker"],
+        "topics": ["sanction", "mare.shadow"]
+      },
+      "referents": [],
+      "datasets": ["ru_nsd_sdn"],
+      "last_change": "2026-04-15",
+      "last_seen": "2026-05-01"
+    },
+    {
+      "id": "NK-def456",
+      "caption": "EASTERN GLORY",
+      "schema": "Vessel",
+      "properties": {
+        "name": ["EASTERN GLORY"],
+        "imoNumber": ["8765432"],
+        "mmsi": ["511001234"],
+        "flag": ["PA"],
+        "buildDate": ["2001"],
+        "type": ["Crude Oil Tanker"],
+        "topics": ["sanction"]
+      },
+      "referents": ["NK-def456-v1"],
+      "datasets": ["us_ofac_sdn"],
+      "last_change": "2026-03-20",
+      "last_seen": "2026-05-01"
+    },
+    {
+      "id": "NK-ghi789",
+      "caption": "Sovcomflot PAO",
+      "schema": "Company",
+      "properties": {
+        "name": ["Sovcomflot PAO", "PAO Sovcomflot", "SCF Group"],
+        "country": ["RU"],
+        "registrationNumber": ["1027700011850"],
+        "topics": ["sanction"]
+      },
+      "referents": [],
+      "datasets": ["ru_nsd_sdn", "us_ofac_sdn"],
+      "last_change": "2026-04-01",
+      "last_seen": "2026-05-01"
+    },
+    {
+      "id": "NK-jkl012",
+      "caption": "PACIFIC SPIRIT",
+      "schema": "Vessel",
+      "properties": {
+        "name": ["PACIFIC SPIRIT", "VOLGA STAR"],
+        "imoNumber": ["7654321"],
+        "mmsi": ["273456789"],
+        "flag": ["RU"],
+        "buildDate": ["1998"],
+        "type": ["Chemical Tanker"],
+        "topics": ["sanction", "mare.shadow"],
+        "ownerName": ["Sovcomflot PAO"]
+      },
+      "referents": [],
+      "datasets": ["us_ofac_sdn"],
+      "last_change": "2026-04-28",
+      "last_seen": "2026-05-01"
+    },
+    {
+      "id": "NK-mno345",
+      "caption": "Novatek OAO",
+      "schema": "Company",
+      "properties": {
+        "name": ["Novatek OAO", "OAO Novatek", "NOVATEK"],
+        "country": ["RU"],
+        "registrationNumber": ["1025500003108"],
+        "topics": ["sanction"]
+      },
+      "referents": [],
+      "datasets": ["us_ofac_sdn"],
+      "last_change": "2026-02-14",
+      "last_seen": "2026-05-01"
+    }
+  ]
+}

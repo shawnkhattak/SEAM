@@ -1,0 +1,22 @@
+{
+  "items": [
+    {
+      "title": "Singapore MPA imposes stricter checks on vessels with PSC detentions",
+      "url": "https://example-maritime.com/news/mpa-psc-stricter-checks-2026",
+      "published": "Fri, 01 May 2026 06:00:00 +0000",
+      "content_text": "The Maritime and Port Authority of Singapore has announced enhanced Port State Control inspections targeting vessels with prior detention records. The crackdown follows a spike in deficiencies reported at Jurong Port and Pasir Panjang Terminal."
+    },
+    {
+      "title": "Shadow fleet tanker OCEAN NAVIGATOR flagged in straits of Malacca",
+      "url": "https://example-maritime.com/news/ocean-navigator-shadow-fleet-2026",
+      "published": "Thu, 30 Apr 2026 18:30:00 +0000",
+      "content_text": "A vessel identified as part of the shadow fleet was tracked transiting Singapore waters. Authorities at Changi Terminal have been alerted."
+    },
+    {
+      "title": "Bunker fuel demand surges at Jurong Island despite refinery constraints",
+      "url": "https://example-maritime.com/news/bunker-demand-jurong-2026",
+      "published": "Thu, 30 Apr 2026 12:00:00 +0000",
+      "content_text": "Bunker fuel demand at Jurong Island has increased sharply this quarter. Port agents are reporting longer wait times at bunkering anchorages near Raffles Marina."
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+services:
+  db:
+    image: timescale/timescaledb-ha:pg16
+    container_name: seam_db
+    environment:
+      POSTGRES_DB: seam
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD_SUPERUSER:-changeme_super}
+    ports:
+      - "5432:5432"
+    volumes:
+      - seam_pgdata:/var/lib/postgresql/data
+      - ./backend/scripts/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d seam"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  seam_pgdata:
