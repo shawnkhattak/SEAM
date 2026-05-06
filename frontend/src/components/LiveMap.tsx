@@ -23,6 +23,8 @@ import type { VesselPosition } from "../types";
 import { useVesselStore } from "../store/vessels";
 import { VesselDetailSheet } from "./VesselDetailSheet";
 import { VesselMarker } from "./VesselMarker";
+import { GeoLayersRenderer, GeoLayerPanel } from "./GeospatialOverlay";
+import { VesselTrailPolyline, TimelineScrubber } from "./TimelineBar";
 
 const SG_CENTER: [number, number] = [1.265, 103.82];
 const DEFAULT_ZOOM = 11;
@@ -88,11 +90,22 @@ export function LiveMap() {
   const { selectedImo, setSelectedImo, riskThreshold, setRiskThreshold } = useVesselStore();
 
   const [showGeoLayers, setShowGeoLayers] = useState(false);
+  const [enabledLayers, setEnabledLayers] = useState<Set<string>>(new Set());
   const [showNews, setShowNews] = useState(false);
   const [showArrivals, setShowArrivals] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const [shadowFleetOnly, setShadowFleetOnly] = useState(false);
   const [showRiskSlider, setShowRiskSlider] = useState(false);
+  const [scrubOffset, setScrubOffset] = useState(0);
+
+  function toggleLayer(name: string) {
+    setEnabledLayers((prev) => {
+      const next = new Set(prev);
+      if (next.has(name)) next.delete(name);
+      else next.add(name);
+      return next;
+    });
+  }
 
   useEffect(() => {
     // Nothing to reset on vessel change — sheet stays open
@@ -123,6 +136,8 @@ export function LiveMap() {
             onClick={setSelectedImo}
           />
         ))}
+        <GeoLayersRenderer enabled={enabledLayers} />
+        <VesselTrailPolyline imo={selectedImo} scrubOffset={scrubOffset} />
       </MapContainer>
 
       {/* Header bar */}
@@ -291,6 +306,22 @@ export function LiveMap() {
           )}
         </div>
       )}
+
+      {/* Geo layer toggle panel */}
+      {showGeoLayers && (
+        <GeoLayerPanel
+          enabled={enabledLayers}
+          onToggle={toggleLayer}
+          onClose={() => setShowGeoLayers(false)}
+        />
+      )}
+
+      {/* Timeline scrubber */}
+      <TimelineScrubber
+        imo={selectedImo}
+        scrubOffset={scrubOffset}
+        onScrub={setScrubOffset}
+      />
 
       {/* Vessel detail — bottom sheet (doesn't cover right controls) */}
       {selectedImo !== null && (
