@@ -25,6 +25,7 @@ import { VesselDetailSheet } from "./VesselDetailSheet";
 import { VesselMarker } from "./VesselMarker";
 import { GeoLayersRenderer, GeoLayerPanel } from "./GeospatialOverlay";
 import { VesselTrailPolyline, TimelineScrubber } from "./TimelineBar";
+import { NewsDrawer } from "./NewsDrawer";
 
 const SG_CENTER: [number, number] = [1.265, 103.82];
 const DEFAULT_ZOOM = 11;
@@ -306,6 +307,9 @@ export function LiveMap() {
           )}
         </div>
       )}
+
+      {/* News drawer */}
+      {showNews && <NewsDrawer onClose={() => setShowNews(false)} />}
 
       {/* Geo layer toggle panel */}
       {showGeoLayers && (

@@ -97,6 +97,10 @@ def create_app() -> FastAPI:
     app.include_router(ports.router, prefix="/api")
     app.include_router(macro.router, prefix="/api")
 
+    # Phase 3 routers
+    from app.routers import news
+    app.include_router(news.router, prefix="/api")
+
     @app.get("/api/health", tags=["meta"])
     async def health():
         return {"status": "ok", "service": "seam-api"}
