@@ -1,0 +1,13 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {"name": "Submarine Pipeline", "type": "pipeline"},
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [[103.74, 1.20], [103.72, 1.18], [103.70, 1.16]]
+      }
+    }
+  ]
+}

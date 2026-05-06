@@ -1,0 +1,13 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {"name": "Singapore Main Island", "type": "land"},
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[103.62, 1.16], [104.04, 1.16], [104.04, 1.48], [103.62, 1.48], [103.62, 1.16]]]
+      }
+    }
+  ]
+}

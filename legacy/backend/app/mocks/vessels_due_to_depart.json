@@ -1,0 +1,7 @@
+[
+  {"vesselParticulars":{"vesselName":"COSCO SHIPPING TAURUS","callSign":"VRGV3","imoNumber":"9234876","flag":"CN"},"duetoDepartTime":"2026-04-26 14:20:00","locationFrom":"PWBGB","locationTo":"SEA"},
+  {"vesselParticulars":{"vesselName":"NORD MARU","callSign":"7JTQ","imoNumber":"9765891","flag":"JP"},"duetoDepartTime":"2026-04-26 15:00:00","locationFrom":"PJUR","locationTo":"SEA"},
+  {"vesselParticulars":{"vesselName":"NAVIG8 SUPREME","callSign":"9HA2358","imoNumber":"9543678","flag":"MT"},"duetoDepartTime":"2026-04-26 16:10:00","locationFrom":"PWBGB","locationTo":"SEA"},
+  {"vesselParticulars":{"vesselName":"MARAN GAS CORONIS","callSign":"SVDQ6","imoNumber":"9321654","flag":"GR"},"duetoDepartTime":"2026-04-26 13:50:00","locationFrom":"PJUR","locationTo":"SEA"},
+  {"vesselParticulars":{"vesselName":"EVER FORWARD","callSign":"3FED9","imoNumber":"9654012","flag":"PA"},"duetoDepartTime":"2026-04-26 14:35:00","locationFrom":"PWBGB","locationTo":"SEA"}
+]

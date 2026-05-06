@@ -1,0 +1,5 @@
+{
+  "text": "{\"flag_codes\": null, \"vessel_types\": [\"tanker\"], \"sanctioned_only\": true, \"shadow_fleet_only\": false, \"min_risk_score\": null, \"max_risk_score\": null, \"connected_to_sanctioned_org\": false, \"new_arrivals_only\": false, \"min_age_years\": null, \"max_age_years\": null, \"min_gross_tonnage\": null, \"max_gross_tonnage\": null}",
+  "tokens_in": 220,
+  "tokens_out": 95
+}

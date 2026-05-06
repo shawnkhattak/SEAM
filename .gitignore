@@ -25,9 +25,6 @@ dist/
 .DS_Store
 Thumbs.db
 
-# Legacy reference (read-only clone of oceans-x-visualizer-V2)
-legacy/
-
 # Logs
 *.log
 

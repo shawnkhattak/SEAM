@@ -1,0 +1,20 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {"name": "Eastern Anchorage No.1 Buoy", "type": "buoy", "lightChar": "Fl Y 5s"},
+      "geometry": {"type": "Point", "coordinates": [104.01, 1.21]}
+    },
+    {
+      "type": "Feature",
+      "properties": {"name": "Sultan Shoal Light", "type": "lighthouse", "lightChar": "Fl(3) 15s"},
+      "geometry": {"type": "Point", "coordinates": [103.74, 1.20]}
+    },
+    {
+      "type": "Feature",
+      "properties": {"name": "Raffles Light", "type": "lighthouse", "lightChar": "Fl 5s"},
+      "geometry": {"type": "Point", "coordinates": [103.75, 1.17]}
+    }
+  ]
+}

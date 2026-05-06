@@ -1,0 +1,70 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Jurong Port",
+        "locode": "SGJRG",
+        "country": "SG",
+        "terminalCode": "JUR"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[103.69, 1.29], [103.70, 1.29], [103.70, 1.30], [103.69, 1.30], [103.69, 1.29]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Pasir Panjang Terminal",
+        "locode": "SGPPT",
+        "country": "SG",
+        "terminalCode": "PPT"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[103.77, 1.27], [103.79, 1.27], [103.79, 1.28], [103.77, 1.28], [103.77, 1.27]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Tanjong Pagar Terminal",
+        "locode": "SGTPT",
+        "country": "SG",
+        "terminalCode": "TPT"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[103.83, 1.26], [103.85, 1.26], [103.85, 1.27], [103.83, 1.27], [103.83, 1.26]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Keppel Terminal",
+        "locode": "SGKEP",
+        "country": "SG",
+        "terminalCode": "KEP"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[103.85, 1.26], [103.87, 1.26], [103.87, 1.27], [103.85, 1.27], [103.85, 1.26]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Sembcorp Marine Shipyard",
+        "locode": "SGSMR",
+        "country": "SG",
+        "terminalCode": "SMR"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[103.74, 1.22], [103.76, 1.22], [103.76, 1.23], [103.74, 1.23], [103.74, 1.22]]]
+      }
+    }
+  ]
+}

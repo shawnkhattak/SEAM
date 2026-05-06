@@ -1,0 +1,1432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SEAM — Singapore Entity Analytics for Maritime</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="data.js"></script>
+<script src="tweaks-panel.jsx" type="text/babel"></script>
+<style>
+  :root {
+    /* Pearl & charcoal with seafoam accent */
+    --bg-base: #eef0f3;
+    --bg-canvas: #e6e9ee;
+    --bg-panel: #fafbfc;
+    --bg-glass: rgba(252,253,254,0.78);
+    --bg-glass-strong: rgba(255,255,255,0.92);
+    --bg-glass-light: rgba(255,255,255,0.45);
+    --border: rgba(38,52,68,0.09);
+    --border-accent: rgba(38,52,68,0.16);
+    --text-primary: #1f2937;
+    --text-secondary: #4b5563;
+    --text-muted: #8a93a3;
+    /* Seafoam accent system */
+    --accent: #2fb8a3;
+    --accent-deep: #1f8a7a;
+    --accent-soft: rgba(47,184,163,0.14);
+    --accent-glow: rgba(47,184,163,0.32);
+    /* Coral for sanctioned, warm amber for shadow */
+    --red: #d94f4f;
+    --red-soft: rgba(217,79,79,0.12);
+    --amber: #d68b3a;
+    --amber-soft: rgba(214,139,58,0.14);
+    --green: #2fb8a3;
+    --blue: #5b8def;
+    --slate: #8a93a3;
+    --font-ui: 'Inter', system-ui, sans-serif;
+    --font-mono: 'IBM Plex Mono', 'Courier New', monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 100%; height: 100%; overflow: hidden; background: var(--bg-base); color: var(--text-primary); font-family: var(--font-ui); }
+  #root { width: 100vw; height: 100vh; }
+
+  /* Scrollbars */
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(38,52,68,0.18); border-radius: 2px; }
+
+  /* Leaflet overrides */
+  .leaflet-container { background: #dde2e8; font-family: var(--font-ui); }
+  .leaflet-control-attribution { display: none !important; }
+  .leaflet-control-zoom { display: none !important; }
+  .leaflet-div-icon { background: none !important; border: none !important; }
+  .leaflet-popup-content-wrapper { background: var(--bg-glass-strong); border: 1px solid var(--border-accent); border-radius: 10px; backdrop-filter: blur(20px); color: var(--text-primary); box-shadow: 0 8px 24px rgba(38,52,68,0.12); }
+  .leaflet-popup-tip { background: var(--bg-glass-strong); }
+
+  /* Animations */
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes slideRight { from { transform: translateX(-20px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+  @keyframes slideLeft { from { transform: translateX(20px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+  @keyframes slideUp { from { transform: translateY(12px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+  @keyframes slideDown { from { transform: translateY(-12px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+  @keyframes pulseGlow {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(47,184,163,0.5); }
+    50% { box-shadow: 0 0 0 5px rgba(47,184,163,0); }
+  }
+  @keyframes seamFlow {
+    from { stroke-dashoffset: 0; }
+    to   { stroke-dashoffset: -8.8; }
+  }
+  @keyframes markPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.04); }
+  }
+  @keyframes radarSweep {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+  @keyframes radarPing {
+    0% { transform: scale(0.3); opacity: 0.9; }
+    100% { transform: scale(2.5); opacity: 0; }
+  }
+  @keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+  @keyframes floatUp {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-3px); }
+  }
+  @keyframes scanLine {
+    0% { top: 0; opacity: 0.6; }
+    100% { top: 100%; opacity: 0; }
+  }
+  @keyframes orbitShip {
+    from { transform: rotate(0deg) translateX(28px) rotate(0deg); }
+    to   { transform: rotate(360deg) translateX(28px) rotate(-360deg); }
+  }
+
+  .glass-panel {
+    background: var(--bg-glass);
+    backdrop-filter: blur(20px) saturate(160%);
+    -webkit-backdrop-filter: blur(20px) saturate(160%);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    box-shadow: 0 1px 0 rgba(255,255,255,0.6) inset, 0 8px 24px rgba(38,52,68,0.08);
+  }
+  .glass-panel-bright {
+    background: var(--bg-glass-strong);
+    backdrop-filter: blur(24px) saturate(160%);
+    -webkit-backdrop-filter: blur(24px) saturate(160%);
+    border: 1px solid var(--border-accent);
+    box-shadow: 0 1px 0 rgba(255,255,255,0.7) inset, 0 12px 32px rgba(38,52,68,0.12);
+  }
+  .mono { font-family: var(--font-mono); }
+  .live-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--green);
+    animation: pulseGlow 2s ease-in-out infinite;
+  }
+  input[type=range] { -webkit-appearance: none; appearance: none; background: transparent; cursor: pointer; width: 100%; }
+  input[type=range]::-webkit-slider-runnable-track { height: 3px; background: rgba(38,52,68,0.12); border-radius: 2px; }
+  input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; border-radius: 50%; background: var(--accent); border: 2px solid #fff; margin-top: -5.5px; box-shadow: 0 0 0 1px rgba(47,184,163,0.3), 0 2px 6px rgba(47,184,163,0.4); }
+
+  /* Tab system */
+  .tab-bar { display: flex; gap: 2px; background: rgba(38,52,68,0.06); border-radius: 8px; padding: 3px; }
+  .tab-btn { flex: 1; padding: 5px 10px; border: none; border-radius: 6px; font-size: 11px; font-family: var(--font-ui); font-weight: 500; cursor: pointer; transition: all 0.18s; color: var(--text-secondary); background: transparent; white-space: nowrap; }
+  .tab-btn.active { background: #fff; color: var(--text-primary); box-shadow: 0 1px 3px rgba(38,52,68,0.08); }
+
+  /* Drawer */
+  .drawer { position: absolute; top: 0; bottom: 0; width: 320px; background: rgba(252,253,254,0.92); backdrop-filter: blur(28px) saturate(160%); -webkit-backdrop-filter: blur(28px) saturate(160%); border-right: 1px solid var(--border-accent); z-index: 600; display: flex; flex-direction: column; overflow: hidden; box-shadow: 4px 0 16px rgba(38,52,68,0.06); }
+  .drawer-right { right: 0; border-right: none; border-left: 1px solid var(--border-accent); box-shadow: -4px 0 16px rgba(38,52,68,0.06); }
+  .drawer-enter { animation: slideRight 0.22s cubic-bezier(0.22,1,0.36,1); }
+  .drawer-enter-right { animation: slideLeft 0.22s cubic-bezier(0.22,1,0.36,1); }
+
+  /* Badges */
+  .badge { display: inline-flex; align-items: center; padding: 2px 7px; border-radius: 4px; font-size: 10px; font-weight: 600; font-family: var(--font-mono); letter-spacing: 0.03em; }
+  .badge-red { background: rgba(217,79,79,0.10); color: #b03838; border: 1px solid rgba(217,79,79,0.22); }
+  .badge-amber { background: rgba(214,139,58,0.12); color: #a86b1f; border: 1px solid rgba(214,139,58,0.25); }
+  .badge-green { background: rgba(47,184,163,0.12); color: #1f8a7a; border: 1px solid rgba(47,184,163,0.22); }
+  .badge-blue { background: rgba(91,141,239,0.12); color: #3a64c4; border: 1px solid rgba(91,141,239,0.22); }
+  .badge-slate { background: rgba(138,147,163,0.14); color: #4b5563; border: 1px solid rgba(138,147,163,0.22); }
+  .badge-ocean { background: rgba(47,184,163,0.10); color: #1f8a7a; border: 1px solid rgba(47,184,163,0.20); }
+
+  /* Risk badge */
+  .risk-badge { display: inline-flex; align-items: center; justify-content: center; border-radius: 5px; font-family: var(--font-mono); font-weight: 600; }
+  .risk-sm { width: 32px; height: 20px; font-size: 11px; }
+  .risk-lg { width: 48px; height: 32px; font-size: 18px; }
+  .risk-low { background: rgba(47,184,163,0.12); color: #1f8a7a; border: 1px solid rgba(47,184,163,0.22); }
+  .risk-med { background: rgba(214,139,58,0.12); color: #a86b1f; border: 1px solid rgba(214,139,58,0.25); }
+  .risk-high { background: rgba(220,108,52,0.14); color: #b15422; border: 1px solid rgba(220,108,52,0.28); }
+  .risk-crit { background: rgba(217,79,79,0.12); color: #b03838; border: 1px solid rgba(217,79,79,0.25); }
+
+  /* Hover states */
+  .row-hover { transition: background 0.12s; cursor: pointer; }
+  .row-hover:hover { background: rgba(38,52,68,0.04) !important; }
+
+  /* Right toolbar */
+  .toolbar-btn { display: flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 8px; border: 1px solid var(--border); background: rgba(252,253,254,0.85); color: var(--text-secondary); font-size: 11px; font-family: var(--font-ui); font-weight: 500; cursor: pointer; transition: all 0.18s; white-space: nowrap; backdrop-filter: blur(14px) saturate(160%); -webkit-backdrop-filter: blur(14px) saturate(160%); box-shadow: 0 1px 0 rgba(255,255,255,0.6) inset, 0 2px 6px rgba(38,52,68,0.06); }
+  .toolbar-btn:hover { border-color: var(--border-accent); color: var(--text-primary); background: rgba(255,255,255,0.95); }
+  .toolbar-btn.active-ocean { background: rgba(47,184,163,0.14); border-color: rgba(47,184,163,0.35); color: var(--accent-deep); }
+  .toolbar-btn.active-amber { background: rgba(214,139,58,0.14); border-color: rgba(214,139,58,0.35); color: #a86b1f; }
+  .toolbar-btn.active-red { background: rgba(217,79,79,0.12); border-color: rgba(217,79,79,0.35); color: #b03838; }
+
+  /* Search */
+  .search-input { background: transparent; border: none; outline: none; color: var(--text-primary); font-family: var(--font-ui); font-size: 14px; width: 100%; }
+  .search-input::placeholder { color: var(--text-muted); }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+const { useState, useEffect, useRef, useCallback, useMemo } = React;
+
+/* ─── HELPERS ─────────────────────────────────────────────── */
+function riskClass(score) {
+  if (score < 30) return 'risk-low';
+  if (score < 60) return 'risk-med';
+  if (score < 85) return 'risk-high';
+  return 'risk-crit';
+}
+function statusColor(s) {
+  return { arrived:'#2fb8a3', incoming:'#5b8def', departing:'#d68b3a', departed:'#8a93a3' }[s] || '#8a93a3';
+}
+function statusBadgeClass(s) {
+  return { arrived:'badge-green', incoming:'badge-blue', departing:'badge-amber', departed:'badge-slate' }[s] || 'badge-slate';
+}
+
+/* ─── ICON SVG COMPONENTS ─────────────────────────────────── */
+const Icon = ({ name, size=14, color='currentColor', style={} }) => {
+  const paths = {
+    layers: <><rect x="2" y="7" width="20" height="2" rx="1"/><rect x="2" y="11" width="20" height="2" rx="1"/><rect x="2" y="3" width="20" height="2" rx="1"/></>,
+    news: <><path d="M4 6h16M4 10h10M4 14h7" stroke={color} strokeWidth="1.5" strokeLinecap="round" fill="none"/></>,
+    ship: <><path d="M2 19l5-12 5 5 5-5 5 12H2z" fill="none" stroke={color} strokeWidth="1.5" strokeLinejoin="round"/><line x1="12" y1="7" x2="12" y2="3" stroke={color} strokeWidth="1.5"/></>,
+    warning: <><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" fill="none" stroke={color} strokeWidth="1.5"/><line x1="12" y1="9" x2="12" y2="13" stroke={color} strokeWidth="1.5"/><circle cx="12" cy="17" r="0.8" fill={color}/></>,
+    risk: <><circle cx="12" cy="12" r="9" fill="none" stroke={color} strokeWidth="1.5"/><line x1="12" y1="7" x2="12" y2="12" stroke={color} strokeWidth="2" strokeLinecap="round"/><circle cx="12" cy="16" r="0.8" fill={color}/></>,
+    book: <><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20" fill="none" stroke={color} strokeWidth="1.5"/></>,
+    search: <><circle cx="11" cy="11" r="7" fill="none" stroke={color} strokeWidth="1.5"/><path d="M21 21l-4.35-4.35" stroke={color} strokeWidth="1.5" strokeLinecap="round"/></>,
+    x: <><path d="M18 6L6 18M6 6l12 12" stroke={color} strokeWidth="1.5" strokeLinecap="round"/></>,
+    chevron_right: <path d="M9 18l6-6-6-6" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>,
+    external: <><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" fill="none" stroke={color} strokeWidth="1.5"/><polyline points="15,3 21,3 21,9" fill="none" stroke={color} strokeWidth="1.5"/><line x1="10" y1="14" x2="21" y2="3" stroke={color} strokeWidth="1.5"/></>,
+    spark: <><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z" fill="none" stroke={color} strokeWidth="1.5" strokeLinejoin="round"/></>,
+    check: <path d="M20 6L9 17l-5-5" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none"/>,
+    arrow_right: <path d="M5 12h14M12 5l7 7-7 7" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>,
+    refresh: <><path d="M23 4v6h-6M1 20v-6h6" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round"/></>,
+    settings: <><circle cx="12" cy="12" r="3" fill="none" stroke={color} strokeWidth="1.5"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83" stroke={color} strokeWidth="1.5" strokeLinecap="round"/></>,
+    admin: <><rect x="2" y="3" width="20" height="14" rx="2" fill="none" stroke={color} strokeWidth="1.5"/><line x1="8" y1="21" x2="16" y2="21" stroke={color} strokeWidth="1.5"/><line x1="12" y1="17" x2="12" y2="21" stroke={color} strokeWidth="1.5"/></>,
+  };
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" style={{flexShrink:0,...style}}>
+      {paths[name]}
+    </svg>
+  );
+};
+
+/* ─── SEAM LOGO MARK ──────────────────────────────────────── */
+function SeamMark({ size = 32, animated = true }) {
+  // A friendly mark: stitched seam that arcs into a wave — threading data
+  // points together. Two parallel "stitched" curves with dotted seam line,
+  // anchored by two soft circular nodes (entities being connected).
+  const id = useMemo(() => `seam-${Math.random().toString(36).slice(2,8)}`, []);
+  return (
+    <svg width={size} height={size} viewBox="0 0 40 40" style={{flexShrink:0}}>
+      <defs>
+        <linearGradient id={`${id}-grad`} x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor="#3ecdb5"/>
+          <stop offset="100%" stopColor="#1f8a7a"/>
+        </linearGradient>
+        <linearGradient id={`${id}-soft`} x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stopColor="rgba(47,184,163,0.18)"/>
+          <stop offset="100%" stopColor="rgba(47,184,163,0.08)"/>
+        </linearGradient>
+      </defs>
+      {/* Soft pebble background */}
+      <rect x="1" y="1" width="38" height="38" rx="11" fill={`url(#${id}-soft)`} stroke="rgba(47,184,163,0.22)" strokeWidth="1"/>
+      {/* Lower wave (cushion) */}
+      <path d="M5 26 Q 14 18, 20 22 T 35 22"
+            fill="none" stroke="rgba(47,184,163,0.30)" strokeWidth="2" strokeLinecap="round"/>
+      {/* Stitched seam line — the SEAM */}
+      <path d="M5 20 Q 14 12, 20 16 T 35 16"
+            fill="none" stroke={`url(#${id}-grad)`} strokeWidth="2.2" strokeLinecap="round"
+            strokeDasharray="2.2 2.2"
+            style={animated ? {animation:'seamFlow 3s linear infinite'} : undefined}/>
+      {/* End nodes — entities being connected */}
+      <circle cx="5" cy="20" r="2.6" fill="#fafbfc" stroke={`url(#${id}-grad)`} strokeWidth="1.8"/>
+      <circle cx="35" cy="16" r="2.6" fill={`url(#${id}-grad)`}/>
+    </svg>
+  );
+}
+
+/* ─── LOADING SCREEN ──────────────────────────────────────── */
+function LoadingScreen({ visible }) {
+  const [progress, setProgress] = useState(0);
+  useEffect(() => {
+    if (!visible) return;
+    const iv = setInterval(() => setProgress(p => Math.min(p + Math.random() * 12, 95)), 120);
+    return () => clearInterval(iv);
+  }, [visible]);
+
+  return (
+    <div style={{
+      position:'fixed', inset:0, zIndex:1000,
+      background:'radial-gradient(ellipse at 50% 40%, #f6f8fb 0%, #e6e9ee 100%)',
+      display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center',
+      transition:'opacity 0.7s ease', opacity:visible?1:0, pointerEvents:visible?'auto':'none',
+      overflow:'hidden'
+    }}>
+      {/* Grid pattern */}
+      <div style={{position:'absolute', inset:0, backgroundImage:'linear-gradient(rgba(47,184,163,0.05) 1px,transparent 1px),linear-gradient(90deg,rgba(47,184,163,0.05) 1px,transparent 1px)', backgroundSize:'40px 40px', pointerEvents:'none'}}/>
+      {/* Glow */}
+      <div style={{position:'absolute', top:'50%', left:'50%', transform:'translate(-50%,-50%)', width:400, height:400, background:'radial-gradient(circle, rgba(47,184,163,0.10) 0%, transparent 70%)', borderRadius:'50%', animation:'floatUp 3s ease-in-out infinite'}}/>
+
+      {/* SEAM mark */}
+      <div style={{marginBottom:28, animation:'markPulse 3s ease-in-out infinite', filter:'drop-shadow(0 8px 24px rgba(47,184,163,0.25))'}}>
+        <SeamMark size={108}/>
+      </div>
+
+      <div style={{textAlign:'center', marginBottom:24}}>
+        <div style={{fontSize:34, fontWeight:800, color:'var(--text-primary)', letterSpacing:'-1px', marginBottom:6}}>SEAM</div>
+        <div style={{fontSize:10, fontFamily:'var(--font-mono)', color:'var(--text-muted)', letterSpacing:'0.22em'}}>SINGAPORE ENTITY ANALYTICS · MARITIME</div>
+      </div>
+
+      <div style={{width:220, marginBottom:10}}>
+        <div style={{height:2, background:'rgba(38,52,68,0.08)', borderRadius:1, overflow:'hidden'}}>
+          <div style={{height:'100%', width:`${progress}%`, background:'linear-gradient(90deg, var(--accent), rgba(47,184,163,0.45))', borderRadius:1, transition:'width 0.1s linear', boxShadow:'0 0 6px rgba(47,184,163,0.4)'}}/>
+        </div>
+      </div>
+      <div style={{fontFamily:'var(--font-mono)', fontSize:11, color:'var(--text-muted)'}}>{Math.round(progress)}% · fetching vessel positions…</div>
+    </div>
+  );
+}
+
+/* ─── HEADER ──────────────────────────────────────────────── */
+function Header({ vesselCount, lastUpdate, onAdminClick }) {
+  return (
+    <div style={{
+      position:'absolute', top:0, left:0, right:0, height:44, zIndex:700,
+      background:'rgba(252,253,254,0.88)', backdropFilter:'blur(20px)', borderBottom:'1px solid var(--border)',
+      display:'flex', alignItems:'center', padding:'0 16px', gap:14, pointerEvents:'auto'
+    }}>
+      {/* Logo mark */}
+      <div style={{display:'flex', alignItems:'center', gap:11, flexShrink:0}}>
+        <SeamMark size={30}/>
+        <div>
+          <div style={{fontSize:18, fontWeight:800, color:'var(--text-primary)', letterSpacing:'-0.6px', lineHeight:1, fontFamily:'var(--font-ui)'}}>SEAM</div>
+          <div style={{fontFamily:'var(--font-mono)', fontSize:9, color:'var(--text-secondary)', letterSpacing:'0.08em', marginTop:3}}>Singapore Entity Analytics</div>
+        </div>
+      </div>
+
+      <div style={{width:1, height:24, background:'var(--border)', flexShrink:0}}/>
+
+      {/* Status */}
+      <div style={{display:'flex', alignItems:'center', gap:8}}>
+        <div className="live-dot"/>
+        <span style={{fontFamily:'var(--font-mono)', fontSize:11, color:'var(--text-secondary)'}}>
+          <span style={{color:'var(--text-primary)', fontWeight:600}}>{vesselCount}</span> vessels
+        </span>
+        <span style={{fontFamily:'var(--font-mono)', fontSize:10, color:'var(--text-muted)'}}>· updated {lastUpdate}</span>
+      </div>
+
+      <div style={{flex:1}}/>
+
+      {/* Attribution */}
+      <div style={{display:'flex', gap:12, alignItems:'center'}}>
+        {['OpenSanctions','Open-Meteo','MPA Singapore'].map(s => (
+          <span key={s} style={{fontSize:10, color:'var(--text-muted)', cursor:'pointer', transition:'color 0.15s'}} onMouseEnter={e=>e.target.style.color='var(--text-secondary)'} onMouseLeave={e=>e.target.style.color='var(--text-muted)'}>{s}</span>
+        ))}
+        <div style={{width:1, height:16, background:'var(--border)'}}/>
+        <button onClick={onAdminClick} style={{display:'flex', alignItems:'center', gap:5, padding:'4px 8px', borderRadius:6, border:'1px solid var(--border)', background:'transparent', color:'var(--text-muted)', cursor:'pointer', fontSize:11, fontFamily:'var(--font-ui)', transition:'all 0.15s'}} onMouseEnter={e=>{e.currentTarget.style.borderColor='var(--border-accent)';e.currentTarget.style.color='var(--text-secondary)';}} onMouseLeave={e=>{e.currentTarget.style.borderColor='var(--border)';e.currentTarget.style.color='var(--text-muted)';}}>
+          <Icon name="admin" size={12}/> Admin
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ─── STATUS BAR ──────────────────────────────────────────── */
+function StatusBar({ shadowFilter, riskFilter }) {
+  const label = shadowFilter ? `${VESSELS.filter(v=>v.shadow).length} shadow fleet` :
+    riskFilter > 0 ? `${VESSELS.filter(v=>v.risk>=riskFilter).length} risk ≥ ${riskFilter}` :
+    `${VESSELS.length} vessels`;
+  const dotColor = shadowFilter ? 'var(--amber)' : riskFilter > 0 ? 'var(--red)' : 'var(--green)';
+
+  return (
+    <div style={{
+      position:'absolute', top:56, left:14, zIndex:500,
+      background:'rgba(252,253,254,0.82)', backdropFilter:'blur(16px)',
+      border:'1px solid var(--border)', borderRadius:20, padding:'5px 12px',
+      display:'flex', alignItems:'center', gap:8, pointerEvents:'auto',
+      animation:'slideDown 0.3s ease'
+    }}>
+      <div style={{width:6, height:6, borderRadius:'50%', background:dotColor, boxShadow:`0 0 6px ${dotColor}`}}/>
+      <span style={{fontFamily:'var(--font-mono)', fontSize:11, color:'var(--text-secondary)'}}>{label}</span>
+      <span style={{fontFamily:'var(--font-mono)', fontSize:10, color:'var(--text-muted)'}}>· 14:32:07</span>
+    </div>
+  );
+}
+
+/* ─── RIGHT TOOLBAR ───────────────────────────────────────── */
+function RightToolbar({ panels, toggle, shadowFilter, toggleShadow, riskFilter, setRiskFilter, showRiskPanel, setShowRiskPanel, showLayerPanel, setShowLayerPanel }) {
+  const buttons = [
+    { id:'layers', label:'Layers', icon:'layers', special: showLayerPanel ? 'active-ocean' : '' },
+    { id:'news',   label:'News',   icon:'news',   special: panels.news    ? 'active-ocean' : '' },
+    { id:'arrivals',label:'Arrivals',icon:'ship', special: panels.arrivals? 'active-ocean' : '' },
+    { id:'shadow', label:'Shadow', icon:'warning',special: shadowFilter   ? 'active-amber' : '' },
+    { id:'risk',   label: riskFilter>0 ? `Risk ≥${riskFilter}` : 'Risk', icon:'risk', special: riskFilter>0 ? 'active-red' : '' },
+    { id:'journal',label:'Journal',icon:'book',  special: panels.journal ? 'active-ocean' : '' },
+    { id:'search', label:'Search', icon:'search', special: panels.search  ? 'active-ocean' : '' },
+  ];
+
+  const handleClick = (id) => {
+    if (id === 'layers') { setShowLayerPanel(p => !p); return; }
+    if (id === 'shadow') { toggleShadow(); return; }
+    if (id === 'risk') { setShowRiskPanel(p => !p); return; }
+    toggle(id);
+  };
+
+  return (
+    <div style={{position:'absolute', top:56, right:14, zIndex:500, display:'flex', flexDirection:'column', gap:4, pointerEvents:'auto', animation:'slideLeft 0.3s ease'}}>
+      {buttons.map(b => (
+        <button key={b.id} className={`toolbar-btn ${b.special}`} onClick={() => handleClick(b.id)}>
+          <Icon name={b.icon} size={13}/>
+          <span>{b.label}</span>
+        </button>
+      ))}
+
+      {/* Geo layer panel */}
+      {showLayerPanel && (
+        <div className="glass-panel" style={{marginTop:4, padding:'12px 14px', animation:'slideLeft 0.2s ease', minWidth:160}}>
+          <div style={{fontSize:10, fontFamily:'var(--font-mono)', color:'var(--text-muted)', marginBottom:8, letterSpacing:'0.06em'}}>GEO LAYERS</div>
+          {['PSA Terminal polygons','Anchorage zones','Port boundaries'].map(l => (
+            <label key={l} style={{display:'flex', alignItems:'center', gap:8, marginBottom:6, cursor:'pointer', fontSize:12, color:'var(--text-secondary)'}}>
+              <input type="checkbox" defaultChecked style={{accentColor:'var(--accent)'}}/>
+              {l}
+            </label>
+          ))}
+        </div>
+      )}
+
+      {/* Risk slider panel */}
+      {showRiskPanel && (
+        <div className="glass-panel" style={{marginTop:4, padding:'12px 14px', width:176, animation:'slideLeft 0.2s ease'}}>
+          <div style={{fontSize:10, fontFamily:'var(--font-mono)', color:'var(--text-muted)', marginBottom:8, letterSpacing:'0.06em'}}>MIN RISK SCORE</div>
+          <input type="range" min="0" max="100" step="5" value={riskFilter} onChange={e => setRiskFilter(+e.target.value)}
+            style={{'--track-fill': `${riskFilter}%`}}/>
+          <div style={{display:'flex', justifyContent:'space-between', marginTop:4}}>
+            <span style={{fontFamily:'var(--font-mono)', fontSize:11, color: riskFilter>0 ? 'var(--red)' : 'var(--text-muted)'}}>{riskFilter > 0 ? `≥ ${riskFilter}` : 'all vessels'}</span>
+            {riskFilter > 0 && <button onClick={() => setRiskFilter(0)} style={{border:'none', background:'none', color:'var(--accent)', fontSize:10, cursor:'pointer', fontFamily:'var(--font-ui)'}}>Clear</button>}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ─── RISK BADGE ──────────────────────────────────────────── */
+function RiskBadge({ score, size='sm' }) {
+  return <div className={`risk-badge risk-${size} ${riskClass(score)}`}>{score}</div>;
+}
+
+/* ─── VESSEL DETAIL PANEL ─────────────────────────────────── */
+function VesselDetailPanel({ vessel, onClose }) {
+  if (!vessel) return null;
+  const sc = statusColor(vessel.status);
+  const riskComponents = [
+    { label:'Sanctions', score: vessel.sanctioned ? 85 : 0 },
+    { label:'Shadow fleet', score: vessel.shadow ? 40 : 0 },
+    { label:'Flag MoU', score: Math.round(vessel.risk * 0.3) },
+    { label:'Age', score: Math.max(0, Math.round((2026 - vessel.built) * 1.2)) },
+  ];
+
+  return (
+    <div className="drawer drawer-right drawer-enter-right" style={{width:300}}>
+      {/* Accent stripe */}
+      <div style={{height:2, background:`linear-gradient(90deg, ${sc}, transparent)`}}/>
+
+      {/* Header */}
+      <div style={{padding:'14px 16px 12px', borderBottom:'1px solid var(--border)', flexShrink:0}}>
+        <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:8}}>
+          <div style={{flex:1, minWidth:0}}>
+            <div style={{fontSize:15, fontWeight:700, color:'var(--text-primary)', lineHeight:1.3, marginBottom:6}}>{vessel.name}</div>
+            <div style={{fontFamily:'var(--font-mono)', fontSize:11, color:'var(--text-muted)'}}>IMO {vessel.imo}</div>
+          </div>
+          <button onClick={onClose} style={{width:26, height:26, borderRadius:6, border:'1px solid var(--border)', background:'transparent', cursor:'pointer', color:'var(--text-secondary)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, marginLeft:8}}>
+            <Icon name="x" size={13}/>
+          </button>
+        </div>
+        <div style={{display:'flex', gap:5, flexWrap:'wrap'}}>
+          <span className={`badge ${statusBadgeClass(vessel.status)}`}>{vessel.status}</span>
+          <span className="badge badge-slate">{vessel.type}</span>
+          {vessel.sanctioned && <span className="badge badge-red">⚠ SANCTIONED</span>}
+          {vessel.shadow && <span className="badge badge-amber">⚑ SHADOW</span>}
+        </div>
+      </div>
+
+      <div style={{overflowY:'auto', flex:1}}>
+        {/* Risk */}
+        <div style={{padding:'14px 16px', borderBottom:'1px solid var(--border)'}}>
+          <div style={{fontSize:10, fontFamily:'var(--font-mono)', color:'var(--text-muted)', letterSpacing:'0.06em', marginBottom:10}}>RISK SCORE</div>
+          <div style={{display:'flex', alignItems:'center', gap:12, marginBottom:12}}>
+            <RiskBadge score={vessel.risk} size="lg"/>
+            <span style={{fontFamily:'var(--font-mono)', fontSize:10, color:'var(--text-muted)'}}>3 hours ago</span>
+          </div>
+          <div style={{display:'flex', flexDirection:'column', gap:6}}>
+            {riskComponents.map(c => (
+              <div key={c.label} style={{display:'flex', alignItems:'center', gap:8}}>
+                <span style={{fontSize:11, color:'var(--text-secondary)', width:80, flexShrink:0}}>{c.label}</span>
+                <div style={{flex:1, height:3, background:'rgba(38,52,68,0.08)', borderRadius:2, overflow:'hidden'}}>
+                  <div style={{height:'100%', width:`${c.score}%`, background: c.score>60 ? 'var(--red)' : c.score>30 ? 'var(--amber)' : 'rgba(38,52,68,0.18)', borderRadius:2, transition:'width 0.6s ease'}}/>
+                </div>
+                <span style={{fontFamily:'var(--font-mono)', fontSize:10, color:'var(--text-muted)', width:24, textAlign:'right'}}>{c.score}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Position */}
+        <div style={{padding:'14px 16px', borderBottom:'1px solid var(--border)'}}>
+          <div style={{fontSize:10, fontFamily:'var(--font-mono)', color:'var(--text-muted)', letterSpacing:'0.06em', marginBottom:10}}>CURRENT POSITION</div>
+          {[
+            ['Status', <span style={{color:sc, fontWeight:600}}>{vessel.status}</span>],
+            ['Position', `${vessel.lat.toFixed(4)}°N, ${vessel.lng.toFixed(4)}°E`],
+            ['Speed', vessel.speed > 0 ? `${vessel.speed} kts` : 'Stationary'],
+            ['Heading', `${vessel.heading}°`],
+            ['Last AIS', vessel.lastAIS],
+            ...(vessel.eta ? [['ETA', vessel.eta]] : []),
+          ].map(([k,v]) => (
+            <div key={k} style={{display:'flex', justifyContent:'space-between', padding:'4px 0'}}>
+              <span style={{fontSize:11, color:'var(--text-secondary)'}}>{k}</span>
+              <span style={{fontFamily:'var(--font-mono)', fontSize:11, color:'var(--text-primary)', textAlign:'right'}}>{v}</span>
+            </div>
+          ))}
+        </div>
+
+        {/* Particulars */}
+        <div style={{padding:'14px 16px', borderBottom:'1px solid var(--border)'}}>
+          <div style={{fontSize:10, fontFamily:'var(--font-mono)', color:'var(--text-muted)', letterSpacing:'0.06em', marginBottom:10}}>PARTICULARS</div>
+          {[
+            ['Flag', vessel.flagFull],
+            ['Type', vessel.type],
+            ['Built', vessel.built],
+            ['GT', vessel.gt?.toLocaleString()],
+            ['DWT', vessel.dwt?.toLocaleString()],
+            ['LOA', `${vessel.loa}m`],
+            ['Beam', `${vessel.beam}m`],
+            ['Owner', vessel.owner],
+            ['Operator', vessel.operator],
+          ].map(([k,v]) => (
+            <div key={k} style={{display:'flex', justifyContent:'space-between', padding:'4px 0'}}>
+              <span style={{fontSize:11, color:'var(--text-secondary)'}}>{k}</span>
+              <span style={{fontFamily:'var(--font-mono)', fontSize:11, color:'var(--text-primary)', textAlign:'right', maxWidth:170, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>{v}</span>
+            </div>
+          ))}
+        </div>
+
+        {/* Sanctions */}
+        {vessel.sanctioned && (
+          <div style={{padding:'14px 16px'}}>
+            <div style={{fontSize:10, fontFamily:'var(--font-mono)', color:'var(--text-muted)', letterSpacing:'0.06em', marginBottom:10}}>SANCTIONS MATCHES</div>
+            <div style={{padding:'10px 12px', background:'rgba(217,79,79,0.08)', border:'1px solid rgba(239,68,68,0.15)', borderRadius:8}}>
+              <div style={{fontSize:12, fontWeight:600, color:'#b03838', marginBottom:4}}>SDN List Match</div>
+              <div style={{fontSize:11, color:'var(--text-secondary)', marginBottom:2}}>IMO exact match · OFAC</div>
+              <div style={{display:'flex', justifyContent:'space-between'}}>
+                <span className="badge badge-red">Confirmed</span>
+                <span style={{fontFamily:'var(--font-mono)', fontSize:10, color:'#b03838'}}>92%</span>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Footer disclaimer */}
+      <div style={{padding:'10px 14px', borderTop:'1px solid var(--border)', fontSize:10, color:'var(--text-muted)', lineHeight:1.5, flexShrink:0}}>
+        Risk indicators are derived from public data sources and should not be relied upon for operational or commercial decisions.
+      </div>
+    </div>
+  );
+}
+
+/* ─── NEWS DRAWER ─────────────────────────────────────────── */
+function NewsDrawer({ onClose, onVesselSearch }) {
+  const [summaries, setSummaries] = useState({});
+  const [loading, setLoading] = useState({});
+
+  const handleSummarize = async (id, headline) => {
+    if (summaries[id]) { setSummaries(p => ({...p, [id]: p[id] === null ? undefined : null})); return; }
+    setLoading(p => ({...p, [id]: true}));
+    try {
+      const text = await window.claude.complete(`In 2 sentences, summarize this maritime news headline for a compliance analyst: "${headline}"`);
+      setSummaries(p => ({...p, [id]: text}));
+    } catch(e) {
+      setSummaries(p => ({...p, [id]: 'Summary unavailable.'}));
+    }
+    setLoading(p => ({...p, [id]: false}));
+  };
+
+  return (
+    <div className="drawer drawer-enter">
+      <div style={{padding:'14px 16px 12px', borderBottom:'1px solid var(--border)', display:'flex', alignItems:'center', gap:10, flexShrink:0}}>
+        <Icon name="news" size={14} color="var(--accent)"/>
+        <span style={{fontSize:14, fontWeight:600, color:'var(--text-primary)', flex:1}}>Maritime News</span>
+        <button onClick={onClose} style={{border:'none', background:'transparent', cursor:'pointer', color:'var(--text-secondary)'}}><Icon name="x" size={14}/></button>
+      </div>
+
+      <div style={{overflowY:'auto', flex:1}}>
+        {NEWS_ITEMS.map((item, i) => (
+          <div key={item.id} style={{padding:'12px 14px', borderBottom:'1px solid var(--border)', animation:`slideRight 0.3s ${i*0.04}s ease both`}}>
+            <div style={{fontSize:12, fontWeight:500, color:'var(--text-primary)', lineHeight:1.4, marginBottom:6}}>{item.headline}</div>
+            <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:8}}>
+              <span style={{fontSize:10, color:'var(--text-muted)', fontFamily:'var(--font-mono)'}}>{item.source} · {item.time}</span>
+              <a href="#" style={{color:'var(--text-muted)'}}><Icon name="external" size={11}/></a>
+            </div>
+            <div style={{display:'flex', gap:4, flexWrap:'wrap', marginBottom:8}}>
+              {item.entities.map(e => (
+                <span key={e} className="badge badge-ocean" style={{cursor:'pointer'}} onClick={() => onVesselSearch(e)}>{e}</span>
+              ))}
+            </div>
+            <button onClick={() => handleSummarize(item.id, item.headline)}
+              style={{display:'flex', alignItems:'center', gap:5, border:'none', background: summaries[item.id] !== undefined ? 'rgba(47,184,163,0.10)' : 'rgba(38,52,68,0.05)', padding:'4px 9px', borderRadius:5, cursor:'pointer', color: summaries[item.id] !== undefined ? 'var(--accent)' : 'var(--text-muted)', fontSize:10, fontFamily:'var(--font-ui)', transition:'all 0.15s'}}>
+              {loading[item.id] ? '…' : <Icon name="spark" size={11}/>}
+              <span>{loading[item.id] ? 'Summarizing…' : summaries[item.id] !== undefined ? 'Hide summary' : 'Summarize'}</span>
+            </button>
+            {summaries[item.id] && (
+              <div style={{marginTop:8, padding:'8px 10px', background:'rgba(47,184,163,0.08)', border:'1px solid rgba(56,189,248,0.1)', borderRadius:6, fontSize:11, color:'var(--text-secondary)', lineHeight:1.5}}>
+                {summaries[item.id]}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ─── ARRIVALS DRAWER ─────────────────────────────────────── */
+function ArrivalsDrawer({ onClose, onVesselSelect }) {
+  return (
+    <div className="drawer drawer-enter">
+      <div style={{padding:'14px 16px 12px', borderBottom:'1px solid var(--border)', display:'flex', alignItems:'center', gap:10, flexShrink:0}}>
+        <Icon name="ship" size={14} color="var(--accent)"/>
+        <div style={{flex:1}}>
+          <div style={{fontSize:14, fontWeight:600, color:'var(--text-primary)'}}>New Arrivals</div>
+          <div style={{fontSize:10, color:'var(--text-muted)'}}>First observed in the last 24 hours</div>
+        </div>
+        <button onClick={onClose} style={{border:'none', background:'transparent', cursor:'pointer', color:'var(--text-secondary)'}}><Icon name="x" size={14}/></button>
+      </div>
+      <div style={{overflowY:'auto', flex:1}}>
+        {ARRIVALS.map((v, i) => {
+          const full = VESSELS.find(x => x.id === v.id);
+          return (
+            <div key={v.id} className="row-hover" onClick={() => full && onVesselSelect(full)}
+              style={{padding:'11px 14px', borderBottom:'1px solid var(--border)', animation:`slideRight 0.3s ${i*0.05}s ease both`}}>
+              <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:5}}>
+                <div>
+                  <div style={{fontSize:13, fontWeight:600, color:'var(--text-primary)'}}>{v.name}</div>
+                  <div style={{fontFamily:'var(--font-mono)', fontSize:10, color:'var(--text-muted)'}}>IMO {v.imo}</div>
+                </div>
+                <span style={{fontFamily:'var(--font-mono)', fontSize:10, color:'var(--text-muted)'}}>{v.firstSeen}</span>
+              </div>
+              <div style={{display:'flex', alignItems:'center', justifyContent:'space-between'}}>
+                <div style={{display:'flex', gap:4}}>
+                  <span className="badge badge-slate">{v.flag} · {v.type}</span>
+                  {v.shadow && <span className="badge badge-amber">Shadow</span>}
+                  {v.sanctioned && <span className="badge badge-red">Sanctioned</span>}
+                </div>
+                {full && <RiskBadge score={full.risk} size="sm"/>}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <div style={{padding:'10px 14px', borderTop:'1px solid var(--border)', fontSize:10, color:'var(--text-muted)', fontFamily:'var(--font-mono)', flexShrink:0}}>
+        {ARRIVALS.length} vessels · refreshes every 5 min
+      </div>
+    </div>
+  );
+}
+
+/* ─── JOURNAL DRAWER ──────────────────────────────────────── */
+function JournalDrawer({ onClose }) {
+  const [tab, setTab] = useState('phases');
+  return (
+    <div className="drawer drawer-enter">
+      <div style={{padding:'14px 16px 12px', borderBottom:'1px solid var(--border)', flexShrink:0}}>
+        <div style={{display:'flex', alignItems:'center', gap:10, marginBottom:10}}>
+          <Icon name="book" size={14} color="var(--accent)"/>
+          <span style={{fontSize:14, fontWeight:600, color:'var(--text-primary)', flex:1}}>Project Journal</span>
+          <button onClick={onClose} style={{border:'none', background:'transparent', cursor:'pointer', color:'var(--text-secondary)'}}><Icon name="x" size={14}/></button>
+        </div>
+        <div className="tab-bar">
+          {[['phases','Phases'],['adrs','ADRs'],['glossary','Glossary']].map(([id,label]) => (
+            <button key={id} className={`tab-btn ${tab===id?'active':''}`} onClick={() => setTab(id)}>{label}</button>
+          ))}
+        </div>
+      </div>
+      <div style={{overflowY:'auto', flex:1}}>
+        {tab === 'phases' && JOURNAL_PHASES.map((p, i) => (
+          <div key={p.phase} style={{padding:'12px 14px', borderBottom:'1px solid var(--border)', animation:`slideRight 0.3s ${i*0.04}s ease both`}}>
+            <div style={{display:'flex', justifyContent:'space-between', marginBottom:4}}>
+              <span style={{fontFamily:'var(--font-mono)', fontSize:10, color:'var(--accent)'}}>Phase {p.phase}</span>
+              <span className={`badge ${p.status==='Complete'?'badge-green':'badge-slate'}`}>{p.status}</span>
+            </div>
+            <div style={{fontSize:13, fontWeight:600, color:'var(--text-primary)', marginBottom:5}}>{p.title}</div>
+            <div style={{fontSize:11, color:'var(--text-secondary)', lineHeight:1.5, display:'-webkit-box', WebkitLineClamp:3, WebkitBoxOrient:'vertical', overflow:'hidden'}}>{p.summary}</div>
+          </div>
+        ))}
+        {tab === 'adrs' && JOURNAL_ADRS.map((a, i) => (
+          <div key={a.id} style={{padding:'12px 14px', borderBottom:'1px solid var(--border)', animation:`slideRight 0.3s ${i*0.04}s ease both`}}>
+            <div style={{display:'flex', justifyContent:'space-between', marginBottom:4}}>
+              <span style={{fontFamily:'var(--font-mono)', fontSize:10, color:'var(--accent)'}}>ADR {a.id}</span>
+              <div style={{display:'flex', gap:6, alignItems:'center'}}>
+                <span style={{fontFamily:'var(--font-mono)', fontSize:10, color:'var(--text-muted)'}}>{a.date}</span>
+                <span className={`badge ${a.status==='Accepted'?'badge-green':'badge-amber'}`}>{a.status}</span>
+              </div>
+            </div>
+            <div style={{fontSize:13, fontWeight:600, color:'var(--text-primary)', marginBottom:5}}>{a.title}</div>
+            <div style={{fontSize:11, color:'var(--text-secondary)', lineHeight:1.5, display:'-webkit-box', WebkitLineClamp:3, WebkitBoxOrient:'vertical', overflow:'hidden'}}>{a.context}</div>
+          </div>
+        ))}
+        {tab === 'glossary' && GLOSSARY.map((g, i) => (
+          <div key={g.term} style={{padding:'12px 14px', borderBottom:'1px solid var(--border)', animation:`slideRight 0.3s ${i*0.04}s ease both`}}>
+            <div style={{display:'flex', alignItems:'center', gap:8, marginBottom:5}}>
+              <span style={{fontSize:13, fontWeight:600, color:'var(--text-primary)'}}>{g.term}</span>
+              <span className="badge badge-ocean">{g.category}</span>
+            </div>
+            <div style={{fontSize:11, color:'var(--text-secondary)', lineHeight:1.5, marginBottom:6}}>{g.definition}</div>
+            <div style={{fontSize:11, color:'var(--accent)', fontStyle:'italic', opacity:0.8, lineHeight:1.4}}>{g.why}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ─── SEARCH OVERLAY ──────────────────────────────────────── */
+function SearchOverlay({ onClose, onVesselSelect }) {
+  const [query, setQuery] = useState('');
+  const [results, setResults] = useState([]);
+  const inputRef = useRef(null);
+
+  useEffect(() => { inputRef.current?.focus(); }, []);
+
+  useEffect(() => {
+    if (!query.trim()) { setResults([]); return; }
+    const q = query.toLowerCase();
+    const filtered = VESSELS.filter(v =>
+      v.name.toLowerCase().includes(q) ||
+      v.imo.includes(q) ||
+      v.type.toLowerCase().includes(q) ||
+      v.flagFull.toLowerCase().includes(q) ||
+      (q.includes('sanction') && v.sanctioned) ||
+      (q.includes('shadow') && v.shadow) ||
+      (q.match(/risk.*(\d+)/) && v.risk >= parseInt(q.match(/(\d+)/)?.[1] || 0))
+    );
+    setResults(filtered);
+  }, [query]);
+
+  return (
+    <div style={{
+      position:'absolute', top:56, left:'50%', transform:'translateX(-50%)',
+      width:480, zIndex:800, animation:'slideDown 0.2s cubic-bezier(0.22,1,0.36,1)'
+    }}>
+      <div className="glass-panel-bright" style={{borderRadius:12, overflow:'hidden'}}>
+        {/* Input */}
+        <div style={{display:'flex', alignItems:'center', gap:10, padding:'10px 14px', borderBottom:'1px solid var(--border)'}}>
+          <Icon name="search" size={16} color="var(--text-muted)"/>
+          <input ref={inputRef} className="search-input" value={query} onChange={e => setQuery(e.target.value)}
+            placeholder='e.g. "sanctioned tankers" or "shadow fleet"'/>
+          <button onClick={onClose} style={{border:'none', background:'transparent', cursor:'pointer', color:'var(--text-secondary)'}}><Icon name="x" size={14}/></button>
+        </div>
+
+        {/* Spec chips */}
+        {query && results.length > 0 && (
+          <div style={{padding:'6px 12px', borderBottom:'1px solid var(--border)', display:'flex', gap:5, flexWrap:'wrap'}}>
+            {query.toLowerCase().includes('sanction') && <span className="badge badge-red">Sanctioned</span>}
+            {query.toLowerCase().includes('shadow') && <span className="badge badge-amber">Shadow fleet</span>}
+            {query.toLowerCase().includes('tanker') || query.toLowerCase().includes('vlcc') ? <span className="badge badge-slate">VLCC / Tanker</span> : null}
+          </div>
+        )}
+
+        {/* Results */}
+        {results.length > 0 && (
+          <div style={{maxHeight:280, overflowY:'auto'}}>
+            {results.map(v => (
+              <div key={v.id} className="row-hover" onClick={() => { onVesselSelect(v); onClose(); }}
+                style={{padding:'9px 14px', borderBottom:'1px solid var(--border)', display:'flex', alignItems:'center', gap:10}}>
+                <div style={{flex:1, minWidth:0}}>
+                  <div style={{fontSize:13, fontWeight:500, color:'var(--text-primary)'}}>{v.name}</div>
+                  <div style={{fontFamily:'var(--font-mono)', fontSize:10, color:'var(--text-muted)'}}>IMO {v.imo} · {v.flag} · {v.type}</div>
+                </div>
+                <div style={{display:'flex', gap:4, alignItems:'center'}}>
+                  {v.shadow && <span className="badge badge-amber">Shadow</span>}
+                  {v.sanctioned && <span className="badge badge-red">Sanctioned</span>}
+                  <RiskBadge score={v.risk} size="sm"/>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+        {query && results.length === 0 && (
+          <div style={{padding:'20px', textAlign:'center', color:'var(--text-muted)', fontSize:12}}>No vessels matched "{query}"</div>
+        )}
+        {results.length > 0 && (
+          <div style={{padding:'6px 14px', fontSize:10, fontFamily:'var(--font-mono)', color:'var(--text-muted)'}}>{results.length} results</div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ─── TIMELINE SCRUBBER ───────────────────────────────────── */
+function TimelineScrubber({ offset, setOffset }) {
+  const label = offset === 0 ? 'Now' : `${Math.abs(Math.round(offset/60))}h ago`;
+  return (
+    <div style={{
+      position:'absolute', bottom:18, left:'50%', transform:'translateX(-50%)',
+      width:320, zIndex:1000, pointerEvents:'auto',
+      animation:'slideUp 0.3s cubic-bezier(0.22,1,0.36,1)'
+    }}>
+      <div className="glass-panel-bright" style={{borderRadius:24, padding:'8px 16px', display:'flex', alignItems:'center', gap:12}}>
+        <span style={{fontFamily:'var(--font-mono)', fontSize:11, color:'var(--text-muted)', flexShrink:0}}>24h</span>
+        <div style={{flex:1, position:'relative'}}>
+          <input type="range" min="-1440" max="0" step="15" value={offset} onChange={e => setOffset(+e.target.value)}/>
+        </div>
+        <span style={{fontFamily:'var(--font-mono)', fontSize:11, color: offset === 0 ? 'var(--accent)' : 'var(--text-secondary)', width:60, textAlign:'right', flexShrink:0}}>{label}</span>
+      </div>
+    </div>
+  );
+}
+
+/* ─── MAP LAYER ───────────────────────────────────────────── */
+function MapLayer({ onVesselClick, selectedVessel, shadowFilter, riskFilter }) {
+  const mapRef = useRef(null);
+  const leafletRef = useRef(null);
+  const markersRef = useRef({});
+
+  useEffect(() => {
+    if (leafletRef.current || !mapRef.current) return;
+
+    const map = L.map(mapRef.current, {
+      center: [1.265, 103.82],
+      zoom: 11,
+      zoomControl: false,
+      attributionControl: false,
+    });
+
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+      maxZoom: 18,
+    }).addTo(map);
+
+    // Port zone overlays
+    const addZone = (lat, lng, radius, color, name) => {
+      L.circle([lat, lng], { color, fillColor: color, fillOpacity: 0.05, weight: 1, dashArray: '4 4', interactive: false, radius }).addTo(map);
+    };
+    addZone(1.265, 103.820, 3500, '#2fb8a3', 'PSA Terminal');
+    addZone(1.233, 103.695, 2500, '#5b8def', 'Jurong Island');
+    addZone(1.378, 103.988, 2000, '#d68b3a', 'Changi');
+
+    // Vessel markers
+    VESSELS.forEach(vessel => {
+      const color = statusColor(vessel.status);
+      const size = vessel.type === 'VLCC' ? 9 : 6;
+      const strokeColor = vessel.sanctioned ? '#d94f4f' : vessel.shadow ? '#d68b3a' : 'rgba(31,41,55,0.6)';
+      const strokeWidth = vessel.sanctioned ? 2 : vessel.shadow ? 1.5 : 1;
+      const opacity = vessel.status === 'departed' ? 0.4 : 1;
+
+      const svgArrow = `
+        <svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='-12 -12 24 24' style='transform:rotate(${vessel.heading}deg)'>
+          <polygon points='0,-${size} ${size*0.5},${size*0.5} 0,0 -${size*0.5},${size*0.5}' fill='${color}' opacity='${opacity}' stroke='${strokeColor}' stroke-width='${strokeWidth}'/>
+        </svg>`;
+
+      const icon = L.divIcon({ html: svgArrow, className: '', iconAnchor: [12, 12], iconSize: [24, 24] });
+      const marker = L.marker([vessel.lat, vessel.lng], { icon }).addTo(map);
+
+      marker.on('click', (e) => {
+        L.DomEvent.stopPropagation(e);
+        onVesselClick(vessel);
+      });
+
+      markersRef.current[vessel.id] = { marker, vessel };
+    });
+
+    map.on('click', () => onVesselClick(null));
+    leafletRef.current = map;
+  }, []);
+
+  // Filter markers
+  useEffect(() => {
+    if (!leafletRef.current) return;
+    Object.values(markersRef.current).forEach(({ marker, vessel }) => {
+      const showShadow = !shadowFilter || vessel.shadow;
+      const showRisk = riskFilter === 0 || vessel.risk >= riskFilter;
+      if (showShadow && showRisk) {
+        if (!leafletRef.current.hasLayer(marker)) marker.addTo(leafletRef.current);
+      } else {
+        if (leafletRef.current.hasLayer(marker)) marker.remove();
+      }
+    });
+  }, [shadowFilter, riskFilter]);
+
+  // Pan to selected vessel
+  useEffect(() => {
+    if (!leafletRef.current || !selectedVessel) return;
+    leafletRef.current.flyTo([selectedVessel.lat, selectedVessel.lng], 13, { duration: 0.8 });
+  }, [selectedVessel?.id]);
+
+  return <div ref={mapRef} style={{ position: 'absolute', inset: 0, zIndex: 0 }}/>;
+}
+
+/* ─── ADMIN SPA ───────────────────────────────────────────── */
+const ADMIN_TABS = [
+  ['overview',   '🏠', 'Overview'],
+  ['approvals',  '✅', 'Approvals'],
+  ['dbexplorer', '🗄️', 'Data'],
+  ['stats',      '📊', 'Stats'],
+  ['opsswarm',   '⚡', 'Ops Swarm'],
+];
+const TABLE_ICONS = {
+  vessels:'🚢', vessel_positions:'📍', sanctions_matches:'🚫', risk_scores:'⚠️',
+  news_items:'📰', geo_layers:'🗺️', audit_log:'📜', review_queue:'⏳',
+};
+
+function AdminApp({ onBack }) {
+  const [tab, setTab] = useState('overview');
+  const [dbTable, setDbTable] = useState('vessels');
+  const [queueFilter, setQueueFilter] = useState('open');
+  const [actionResult, setActionResult] = useState(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  const tables = ['vessels','vessel_positions','sanctions_matches','risk_scores','news_items','geo_layers','audit_log','review_queue'];
+
+  const mockAction = (label) => {
+    setActionResult({ msg:`Running ${label}…`, kind:'pending' });
+    setTimeout(() => setActionResult({ msg:`✓ ${label} completed at ${new Date().toLocaleTimeString()}`, kind:'success' }), 1200);
+    setTimeout(() => setActionResult(null), 6000);
+  };
+
+  const filteredQueue = queueFilter === 'all' ? ADMIN_STATS.reviewQueue : ADMIN_STATS.reviewQueue.filter(r => r.status === queueFilter);
+
+  const FORCE_ACTIONS = [
+    ['🔄', 'Force Poll',          'Re-fetch AIS positions'],
+    ['🎯', 'Force Risk Score',    'Recompute risk for all vessels'],
+    ['🌤️', 'Force Weather',       'Refresh weather overlays'],
+    ['📰', 'Force News',          'Pull latest maritime news'],
+    ['📚', 'Force Journal Index', 'Rebuild journal search index'],
+  ];
+
+  return (
+    <div style={{ position:'fixed', inset:0, fontFamily:'var(--font-ui)', display:'flex', flexDirection:'column', overflow:'hidden', zIndex:2000,
+      background:'radial-gradient(ellipse at 20% 10%, rgba(91,141,239,0.12) 0%, transparent 50%), radial-gradient(ellipse at 90% 90%, rgba(47,184,163,0.10) 0%, transparent 55%), linear-gradient(180deg, #eef2f7 0%, #e3e8ef 100%)'
+    }}>
+      {/* Decorative blobs */}
+      <div style={{position:'absolute', top:-120, right:-80, width:360, height:360, borderRadius:'50%', background:'radial-gradient(circle, rgba(47,184,163,0.18) 0%, transparent 70%)', filter:'blur(40px)', pointerEvents:'none'}}/>
+      <div style={{position:'absolute', bottom:-100, left:-80, width:300, height:300, borderRadius:'50%', background:'radial-gradient(circle, rgba(91,141,239,0.18) 0%, transparent 70%)', filter:'blur(40px)', pointerEvents:'none'}}/>
+
+      {/* Admin header */}
+      <div style={{
+        background:'rgba(252,253,254,0.65)', backdropFilter:'blur(24px) saturate(160%)', WebkitBackdropFilter:'blur(24px) saturate(160%)',
+        borderBottom:'1px solid var(--border-accent)', padding:'0 18px', height:56, display:'flex', alignItems:'center', gap:14, flexShrink:0,
+        boxShadow:'0 1px 0 rgba(255,255,255,0.6) inset, 0 4px 18px rgba(38,52,68,0.06)', zIndex:5
+      }}>
+        <button onClick={() => setSidebarOpen(s=>!s)} style={{display:'none', background:'transparent', border:'1px solid var(--border)', borderRadius:8, width:34, height:34, cursor:'pointer', color:'var(--text-secondary)', alignItems:'center', justifyContent:'center'}} className="admin-mobile-menu">☰</button>
+        <SeamMark size={28}/>
+        <div>
+          <div style={{fontSize:16, fontWeight:800, color:'var(--text-primary)', letterSpacing:'-0.4px', lineHeight:1}}>SEAM <span style={{color:'var(--accent-deep)', fontWeight:600}}>Admin</span></div>
+          <div style={{fontSize:10, color:'var(--text-muted)', fontFamily:'var(--font-mono)', letterSpacing:'0.06em', marginTop:3}}>Internal · Build 2026.05.0</div>
+        </div>
+        <div style={{flex:1}}/>
+        <div style={{display:'flex', alignItems:'center', gap:8, padding:'5px 12px', borderRadius:20, background:'rgba(47,184,163,0.10)', border:'1px solid rgba(47,184,163,0.20)'}}>
+          <span style={{width:7, height:7, borderRadius:'50%', background:'var(--accent)', boxShadow:'0 0 6px rgba(47,184,163,0.6)', animation:'pulseGlow 2s infinite'}}/>
+          <span style={{fontSize:11, fontFamily:'var(--font-mono)', color:'var(--accent-deep)', fontWeight:600}}>All systems healthy</span>
+        </div>
+        <button onClick={onBack} style={{display:'flex', alignItems:'center', gap:6, border:'1px solid var(--border-accent)', background:'rgba(255,255,255,0.6)', color:'var(--text-primary)', padding:'7px 14px', borderRadius:8, cursor:'pointer', fontSize:12, fontFamily:'var(--font-ui)', fontWeight:500, transition:'all 0.15s'}}
+          onMouseEnter={e=>{e.currentTarget.style.background='rgba(255,255,255,0.95)';e.currentTarget.style.transform='translateY(-1px)';}}
+          onMouseLeave={e=>{e.currentTarget.style.background='rgba(255,255,255,0.6)';e.currentTarget.style.transform='translateY(0)';}}>
+          ← Back to map
+        </button>
+      </div>
+
+      {/* Body: sidebar + content */}
+      <div style={{flex:1, display:'flex', overflow:'hidden', position:'relative', zIndex:2}}>
+        {/* Sidebar tabs */}
+        <div className="admin-sidebar" style={{
+          width:220, flexShrink:0, padding:'18px 12px',
+          background:'rgba(252,253,254,0.55)', backdropFilter:'blur(20px) saturate(160%)', WebkitBackdropFilter:'blur(20px) saturate(160%)',
+          borderRight:'1px solid var(--border)',
+          display:'flex', flexDirection:'column', gap:3
+        }}>
+          <div style={{fontSize:10, color:'var(--text-muted)', letterSpacing:'0.12em', padding:'4px 12px 8px', fontWeight:600}}>NAVIGATION</div>
+          {ADMIN_TABS.map(([id, emoji, label]) => (
+            <button key={id} onClick={() => {setTab(id); setSidebarOpen(false);}} style={{
+              display:'flex', alignItems:'center', gap:11, padding:'10px 13px', border:'none',
+              background: tab===id ? 'rgba(255,255,255,0.85)' : 'transparent',
+              borderRadius:9, cursor:'pointer', fontSize:13, fontFamily:'var(--font-ui)', fontWeight: tab===id ? 600 : 500,
+              color: tab===id ? 'var(--text-primary)' : 'var(--text-secondary)',
+              boxShadow: tab===id ? '0 1px 0 rgba(255,255,255,0.7) inset, 0 2px 8px rgba(38,52,68,0.08)' : 'none',
+              border: tab===id ? '1px solid var(--border-accent)' : '1px solid transparent',
+              textAlign:'left', transition:'all 0.15s'
+            }}
+            onMouseEnter={e=>{if(tab!==id)e.currentTarget.style.background='rgba(255,255,255,0.4)';}}
+            onMouseLeave={e=>{if(tab!==id)e.currentTarget.style.background='transparent';}}>
+              <span style={{fontSize:16}}>{emoji}</span>
+              <span>{label}</span>
+              {tab===id && <span style={{marginLeft:'auto', width:5, height:5, borderRadius:'50%', background:'var(--accent)'}}/>}
+            </button>
+          ))}
+          <div style={{flex:1}}/>
+          <div style={{padding:'12px', background:'rgba(255,255,255,0.5)', borderRadius:10, border:'1px solid var(--border)', fontSize:11, color:'var(--text-secondary)', lineHeight:1.5}}>
+            <div style={{fontWeight:600, color:'var(--text-primary)', marginBottom:4}}>💡 Tip</div>
+            Use Force actions to manually trigger ingestion pipelines.
+          </div>
+        </div>
+
+        {/* Tab content */}
+        <div style={{flex:1, overflowY:'auto', padding:'24px 28px'}}>
+
+        {tab === 'overview' && (
+          <div style={{maxWidth:1100, display:'flex', flexDirection:'column', gap:22}}>
+            <div>
+              <h1 style={{fontSize:24, fontWeight:700, color:'var(--text-primary)', margin:0, letterSpacing:'-0.4px'}}>Welcome back 👋</h1>
+              <p style={{fontSize:13, color:'var(--text-secondary)', margin:'4px 0 0'}}>Pipelines and data sources at a glance</p>
+            </div>
+
+            {/* KPI grid */}
+            <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(200px, 1fr))', gap:14}}>
+              {[
+                ['🚢', 'Vessels tracked', VESSELS.length, 'rgba(91,141,239,0.14)', '#3a64c4'],
+                ['⚠️', 'High-risk',       VESSELS.filter(v=>v.risk>=60).length, 'rgba(214,139,58,0.14)', '#a86b1f'],
+                ['🚫', 'Sanctioned',      ADMIN_STATS.sanctioned, 'rgba(217,79,79,0.12)', '#b03838'],
+                ['⏳', 'Pending review',  ADMIN_STATS.pendingReviews, 'rgba(47,184,163,0.14)', '#1f8a7a'],
+              ].map(([emoji,label,val,bg,color]) => (
+                <div key={label} className="glass-panel" style={{padding:'16px 18px', borderRadius:14, display:'flex', alignItems:'center', gap:14}}>
+                  <div style={{width:44, height:44, borderRadius:12, background:bg, display:'flex', alignItems:'center', justifyContent:'center', fontSize:22, flexShrink:0}}>{emoji}</div>
+                  <div>
+                    <div style={{fontSize:12, color:'var(--text-secondary)', fontWeight:500}}>{label}</div>
+                    <div style={{fontSize:26, fontWeight:700, color, fontFamily:'var(--font-ui)', letterSpacing:'-0.5px', lineHeight:1.1, marginTop:2}}>{val}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Force actions */}
+            <section className="glass-panel" style={{padding:'20px 22px', borderRadius:14}}>
+              <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:14}}>
+                <div>
+                  <h2 style={{fontSize:15, fontWeight:600, color:'var(--text-primary)', margin:0}}>⚡ Force actions</h2>
+                  <p style={{fontSize:12, color:'var(--text-secondary)', margin:'2px 0 0'}}>Manually trigger ingestion or scoring pipelines</p>
+                </div>
+              </div>
+              <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(200px, 1fr))', gap:10}}>
+                {FORCE_ACTIONS.map(([emoji, label, desc]) => (
+                  <button key={label} onClick={() => mockAction(label)} style={{
+                    display:'flex', alignItems:'center', gap:10, padding:'11px 14px',
+                    border:'1px solid var(--border)', background:'rgba(255,255,255,0.55)',
+                    borderRadius:10, fontSize:12, fontFamily:'var(--font-ui)', cursor:'pointer',
+                    transition:'all 0.15s', textAlign:'left', color:'var(--text-primary)'
+                  }}
+                    onMouseEnter={e=>{e.currentTarget.style.background='rgba(255,255,255,0.95)';e.currentTarget.style.transform='translateY(-1px)';e.currentTarget.style.boxShadow='0 4px 12px rgba(38,52,68,0.08)';}}
+                    onMouseLeave={e=>{e.currentTarget.style.background='rgba(255,255,255,0.55)';e.currentTarget.style.transform='translateY(0)';e.currentTarget.style.boxShadow='none';}}>
+                    <span style={{fontSize:18}}>{emoji}</span>
+                    <div style={{flex:1, minWidth:0}}>
+                      <div style={{fontWeight:600}}>{label}</div>
+                      <div style={{fontSize:10, color:'var(--text-muted)', marginTop:1}}>{desc}</div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+              {actionResult && (
+                <div style={{
+                  marginTop:14, padding:'10px 14px',
+                  background: actionResult.kind==='success' ? 'rgba(47,184,163,0.10)' : 'rgba(91,141,239,0.10)',
+                  border: actionResult.kind==='success' ? '1px solid rgba(47,184,163,0.25)' : '1px solid rgba(91,141,239,0.25)',
+                  borderRadius:8, fontSize:12, fontFamily:'var(--font-mono)',
+                  color: actionResult.kind==='success' ? 'var(--accent-deep)' : '#3a64c4',
+                  animation:'fadeIn 0.2s'
+                }}>{actionResult.msg}</div>
+              )}
+            </section>
+
+            {/* Two-col layout */}
+            <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(360px, 1fr))', gap:18}}>
+              {/* Source health */}
+              <section className="glass-panel" style={{padding:'18px 22px', borderRadius:14}}>
+                <h2 style={{fontSize:15, fontWeight:600, color:'var(--text-primary)', margin:'0 0 4px'}}>🔌 Source health</h2>
+                <p style={{fontSize:11, color:'var(--text-secondary)', margin:'0 0 14px'}}>Upstream data feeds</p>
+                <div style={{display:'flex', flexDirection:'column', gap:7}}>
+                  {ADMIN_STATS.sourceHealth.map(s => (
+                    <div key={s.source} style={{display:'flex', alignItems:'center', gap:10, padding:'9px 12px', background:'rgba(255,255,255,0.5)', borderRadius:8, border:'1px solid var(--border)'}}>
+                      <span style={{width:8, height:8, borderRadius:'50%', background: s.status==='OK' ? 'var(--green)' : 'var(--red)', boxShadow: s.status==='OK' ? '0 0 6px rgba(47,184,163,0.5)' : '0 0 6px rgba(217,79,79,0.5)', flexShrink:0}}/>
+                      <span style={{fontSize:13, fontWeight:500, color:'var(--text-primary)', flex:1}}>{s.source}</span>
+                      <span className={`badge ${s.status==='OK' ? 'badge-green' : 'badge-red'}`}>{s.status}</span>
+                      <span style={{fontSize:10, color:'var(--text-muted)', fontFamily:'var(--font-mono)'}}>{s.lastSuccess}</span>
+                    </div>
+                  ))}
+                </div>
+              </section>
+
+              {/* Audit log */}
+              <section className="glass-panel" style={{padding:'18px 22px', borderRadius:14}}>
+                <h2 style={{fontSize:15, fontWeight:600, color:'var(--text-primary)', margin:'0 0 4px'}}>📜 Recent activity</h2>
+                <p style={{fontSize:11, color:'var(--text-secondary)', margin:'0 0 14px'}}>Last {ADMIN_STATS.auditLog.length} events</p>
+                <div style={{display:'flex', flexDirection:'column', gap:6, maxHeight:280, overflowY:'auto'}}>
+                  {ADMIN_STATS.auditLog.map((e,i) => {
+                    const sevEmoji = e.severity==='error' ? '🔴' : e.severity==='warning' ? '🟡' : '🔵';
+                    return (
+                      <div key={i} style={{display:'flex', alignItems:'flex-start', gap:10, padding:'8px 10px', borderRadius:7, transition:'background 0.12s'}}
+                        onMouseEnter={ev=>ev.currentTarget.style.background='rgba(255,255,255,0.5)'}
+                        onMouseLeave={ev=>ev.currentTarget.style.background='transparent'}>
+                        <span style={{fontSize:13, flexShrink:0, marginTop:1}}>{sevEmoji}</span>
+                        <div style={{flex:1, minWidth:0}}>
+                          <div style={{fontSize:12, color:'var(--text-primary)', fontWeight:500}}>{e.action}</div>
+                          <div style={{fontSize:10, color:'var(--text-muted)', fontFamily:'var(--font-mono)', marginTop:1}}>{e.actor} · {e.time}</div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </section>
+            </div>
+          </div>
+        )}
+
+        {tab === 'approvals' && (
+          <div style={{maxWidth:1100, display:'flex', flexDirection:'column', gap:18}}>
+            <div>
+              <h1 style={{fontSize:24, fontWeight:700, color:'var(--text-primary)', margin:0, letterSpacing:'-0.4px'}}>✅ Review queue</h1>
+              <p style={{fontSize:13, color:'var(--text-secondary)', margin:'4px 0 0'}}>Confirm or reject auto-detected entity matches</p>
+            </div>
+            <div className="glass-panel" style={{padding:'18px 22px', borderRadius:14}}>
+              <div style={{display:'flex', gap:6, marginBottom:14, flexWrap:'wrap'}}>
+                {[['open','📂 Open'],['confirmed','✅ Confirmed'],['rejected','❌ Rejected'],['all','📋 All']].map(([f,label]) => (
+                  <button key={f} onClick={() => setQueueFilter(f)} style={{
+                    padding:'7px 14px', border:'1px solid', borderRadius:8,
+                    background: queueFilter===f ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.4)',
+                    borderColor: queueFilter===f ? 'var(--border-accent)' : 'var(--border)',
+                    color: queueFilter===f ? 'var(--text-primary)' : 'var(--text-secondary)',
+                    fontSize:12, fontFamily:'var(--font-ui)', fontWeight: queueFilter===f ? 600 : 500, cursor:'pointer',
+                    boxShadow: queueFilter===f ? '0 1px 3px rgba(38,52,68,0.08)' : 'none', transition:'all 0.15s'
+                  }}>
+                    {label}
+                  </button>
+                ))}
+              </div>
+              <div style={{borderRadius:10, overflow:'hidden', border:'1px solid var(--border)'}}>
+                <div style={{display:'grid', gridTemplateColumns:'80px 1fr 110px 110px 90px 160px', padding:'10px 14px', background:'rgba(255,255,255,0.6)', borderBottom:'1px solid var(--border)', fontSize:10, color:'var(--text-muted)', fontWeight:600, letterSpacing:'0.06em'}}>
+                  <div>ID</div><div>VESSEL</div><div>IMO</div><div>STATUS</div><div>CONFIDENCE</div><div>ACTIONS</div>
+                </div>
+                {filteredQueue.length === 0 && (
+                  <div style={{padding:'40px', textAlign:'center', color:'var(--text-muted)', fontSize:13, background:'rgba(255,255,255,0.3)'}}>No items in this filter ✨</div>
+                )}
+                {filteredQueue.map((r,i) => (
+                  <div key={r.id} className="row-hover" style={{display:'grid', gridTemplateColumns:'80px 1fr 110px 110px 90px 160px', padding:'12px 14px', alignItems:'center', borderBottom: i<filteredQueue.length-1 ? '1px solid var(--border)' : 'none', background:'rgba(255,255,255,0.3)', fontSize:13}}>
+                    <div style={{color:'var(--accent-deep)', fontFamily:'var(--font-mono)', fontWeight:600}}>{r.id}</div>
+                    <div style={{color:'var(--text-primary)', fontWeight:500}}>{r.name}</div>
+                    <div style={{color:'var(--text-muted)', fontFamily:'var(--font-mono)', fontSize:11}}>{r.imo}</div>
+                    <div><span className={`badge ${r.status==='confirmed' ? 'badge-green' : r.status==='rejected' ? 'badge-slate' : 'badge-amber'}`}>{r.status}</span></div>
+                    <div style={{display:'flex', alignItems:'center', gap:6}}>
+                      <div style={{flex:1, height:5, background:'rgba(38,52,68,0.08)', borderRadius:3, overflow:'hidden'}}>
+                        <div style={{width:`${r.confidence}%`, height:'100%', background: r.confidence>=80 ? 'var(--accent)' : r.confidence>=50 ? 'var(--amber)' : 'var(--red)', borderRadius:3}}/>
+                      </div>
+                      <span style={{fontSize:11, color:'var(--text-primary)', fontFamily:'var(--font-mono)', fontWeight:600}}>{r.confidence}%</span>
+                    </div>
+                    <div>
+                      {r.status === 'open' ? (
+                        <div style={{display:'flex', gap:6}}>
+                          <button style={{padding:'5px 11px', border:'1px solid rgba(47,184,163,0.30)', background:'rgba(47,184,163,0.12)', color:'var(--accent-deep)', borderRadius:6, fontSize:11, cursor:'pointer', fontFamily:'var(--font-ui)', fontWeight:600, transition:'all 0.15s'}}
+                            onMouseEnter={e=>e.currentTarget.style.background='rgba(47,184,163,0.22)'}
+                            onMouseLeave={e=>e.currentTarget.style.background='rgba(47,184,163,0.12)'}>✓ Confirm</button>
+                          <button style={{padding:'5px 11px', border:'1px solid rgba(217,79,79,0.30)', background:'rgba(217,79,79,0.10)', color:'#b03838', borderRadius:6, fontSize:11, cursor:'pointer', fontFamily:'var(--font-ui)', fontWeight:600, transition:'all 0.15s'}}
+                            onMouseEnter={e=>e.currentTarget.style.background='rgba(217,79,79,0.20)'}
+                            onMouseLeave={e=>e.currentTarget.style.background='rgba(217,79,79,0.10)'}>✕ Reject</button>
+                        </div>
+                      ) : <span style={{fontSize:11, color:'var(--text-muted)'}}>—</span>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {tab === 'dbexplorer' && (
+          <div style={{maxWidth:1200, display:'flex', flexDirection:'column', gap:18, height:'100%'}}>
+            <div>
+              <h1 style={{fontSize:24, fontWeight:700, color:'var(--text-primary)', margin:0, letterSpacing:'-0.4px'}}>🗄️ Data explorer</h1>
+              <p style={{fontSize:13, color:'var(--text-secondary)', margin:'4px 0 0'}}>Browse raw tables · read-only</p>
+            </div>
+            <div style={{display:'flex', gap:14, flex:1, minHeight:0, flexWrap:'wrap'}}>
+              <div className="glass-panel" style={{width:220, flexShrink:0, padding:10, borderRadius:14, alignSelf:'flex-start', display:'flex', flexDirection:'column', gap:2}}>
+                <div style={{fontSize:10, color:'var(--text-muted)', letterSpacing:'0.10em', padding:'6px 10px 8px', fontWeight:600}}>TABLES</div>
+                {tables.map(tname => (
+                  <button key={tname} onClick={() => setDbTable(tname)} style={{
+                    display:'flex', alignItems:'center', gap:9, padding:'8px 11px', border:'none',
+                    background: dbTable===tname ? 'rgba(47,184,163,0.14)' : 'transparent',
+                    borderRadius:7, fontSize:12, fontFamily:'var(--font-mono)', cursor:'pointer',
+                    color: dbTable===tname ? 'var(--accent-deep)' : 'var(--text-secondary)',
+                    fontWeight: dbTable===tname ? 600 : 500,
+                    textAlign:'left', transition:'all 0.12s'
+                  }}
+                    onMouseEnter={e=>{if(dbTable!==tname)e.currentTarget.style.background='rgba(255,255,255,0.5)';}}
+                    onMouseLeave={e=>{if(dbTable!==tname)e.currentTarget.style.background='transparent';}}>
+                    <span style={{fontSize:14}}>{TABLE_ICONS[tname]||'📋'}</span>
+                    <span>{tname}</span>
+                  </button>
+                ))}
+              </div>
+              <div className="glass-panel" style={{flex:1, minWidth:300, borderRadius:14, overflow:'hidden', display:'flex', flexDirection:'column'}}>
+                <div style={{padding:'12px 18px', borderBottom:'1px solid var(--border)', fontSize:12, color:'var(--text-secondary)', display:'flex', justifyContent:'space-between', alignItems:'center', background:'rgba(255,255,255,0.5)'}}>
+                  <span>📋 <span style={{color:'var(--accent-deep)', fontFamily:'var(--font-mono)', fontWeight:600}}>{dbTable}</span></span>
+                  <span style={{fontSize:11, color:'var(--text-muted)'}}>10 of 29 rows · page 1 of 3</span>
+                </div>
+                <div style={{overflow:'auto', flex:1}}>
+                  <table style={{width:'100%', borderCollapse:'collapse', fontSize:11, fontFamily:'var(--font-mono)'}}>
+                    <thead><tr style={{background:'rgba(255,255,255,0.6)', position:'sticky', top:0}}>
+                      {['id','name','imo','type','flag','status','risk','shadow','sanctioned'].map(h => (
+                        <th key={h} style={{padding:'9px 14px', textAlign:'left', color:'var(--text-muted)', fontWeight:600, borderBottom:'1px solid var(--border)', whiteSpace:'nowrap', fontSize:10, letterSpacing:'0.05em', textTransform:'uppercase'}}>{h}</th>
+                      ))}
+                    </tr></thead>
+                    <tbody>
+                      {VESSELS.slice(0,10).map((v,i) => (
+                        <tr key={v.id} style={{borderBottom: i<9 ? '1px solid var(--border)' : 'none', transition:'background 0.12s'}}
+                          onMouseEnter={e=>e.currentTarget.style.background='rgba(255,255,255,0.5)'}
+                          onMouseLeave={e=>e.currentTarget.style.background='transparent'}>
+                          <td style={{padding:'9px 14px', color:'var(--text-muted)'}}>{v.id}</td>
+                          <td style={{padding:'9px 14px', color:'var(--text-primary)', fontWeight:500, whiteSpace:'nowrap'}}>{v.name}</td>
+                          <td style={{padding:'9px 14px', color:'var(--text-secondary)'}}>{v.imo}</td>
+                          <td style={{padding:'9px 14px', color:'var(--text-secondary)'}}>{v.type}</td>
+                          <td style={{padding:'9px 14px', color:'var(--text-secondary)'}}>{v.flag}</td>
+                          <td style={{padding:'9px 14px', color:statusColor(v.status), fontWeight:600}}>● {v.status}</td>
+                          <td style={{padding:'9px 14px', color:'var(--text-primary)', fontWeight:600}}>{v.risk}</td>
+                          <td style={{padding:'9px 14px', color: v.shadow ? '#a86b1f' : 'var(--text-muted)'}}>{v.shadow ? 'true' : 'false'}</td>
+                          <td style={{padding:'9px 14px', color: v.sanctioned ? '#b03838' : 'var(--text-muted)'}}>{v.sanctioned ? 'true' : 'false'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {tab === 'stats' && (
+          <div style={{maxWidth:1100, display:'flex', flexDirection:'column', gap:22}}>
+            <div>
+              <h1 style={{fontSize:24, fontWeight:700, color:'var(--text-primary)', margin:0, letterSpacing:'-0.4px'}}>📊 Statistics</h1>
+              <p style={{fontSize:13, color:'var(--text-secondary)', margin:'4px 0 0'}}>Fleet composition and risk distribution</p>
+            </div>
+
+            {/* KPI row */}
+            <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(220px, 1fr))', gap:14}}>
+              {[
+                ['🚫', 'Sanctioned vessels',  ADMIN_STATS.sanctioned,    '#b03838', 'rgba(217,79,79,0.10)'],
+                ['👥', 'Shadow fleet',        ADMIN_STATS.shadowFleet,   '#a86b1f', 'rgba(214,139,58,0.12)'],
+                ['⏳', 'Pending reviews',     ADMIN_STATS.pendingReviews,'#1f8a7a', 'rgba(47,184,163,0.12)'],
+              ].map(([emoji,label,val,color,bg]) => (
+                <div key={label} className="glass-panel" style={{padding:'18px 20px', borderRadius:14}}>
+                  <div style={{display:'flex', alignItems:'center', gap:10, marginBottom:12}}>
+                    <div style={{width:36, height:36, borderRadius:10, background:bg, display:'flex', alignItems:'center', justifyContent:'center', fontSize:20}}>{emoji}</div>
+                    <div style={{fontSize:12, color:'var(--text-secondary)', fontWeight:500}}>{label}</div>
+                  </div>
+                  <div style={{fontSize:38, fontWeight:700, color, fontFamily:'var(--font-ui)', letterSpacing:'-1px', lineHeight:1}}>{val}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Risk histogram */}
+            <section className="glass-panel" style={{padding:'20px 24px', borderRadius:14}}>
+              <h2 style={{fontSize:15, fontWeight:600, color:'var(--text-primary)', margin:'0 0 4px'}}>📈 Risk score distribution</h2>
+              <p style={{fontSize:11, color:'var(--text-secondary)', margin:'0 0 18px'}}>Vessel count by risk bucket</p>
+              <div style={{display:'flex', alignItems:'flex-end', gap:6, height:140, paddingBottom:24}}>
+                {ADMIN_STATS.riskHistogram.map(b => {
+                  const v = parseInt(b.bucket);
+                  const c = v>=80?'#d94f4f':v>=60?'#d68b3a':v>=40?'#5b8def':'#2fb8a3';
+                  return (
+                    <div key={b.bucket} style={{flex:1, display:'flex', flexDirection:'column', alignItems:'center', gap:5}}>
+                      <div style={{fontSize:11, color:'var(--text-primary)', fontWeight:600, fontFamily:'var(--font-mono)'}}>{b.count}</div>
+                      <div style={{width:'100%', background:`linear-gradient(180deg, ${c} 0%, ${c}88 100%)`, borderRadius:'6px 6px 0 0', height: b.count * 11, minHeight: b.count > 0 ? 4 : 0, transition:'height 0.6s ease', boxShadow:`0 2px 6px ${c}40`}}/>
+                      <div style={{fontSize:10, color:'var(--text-muted)', fontFamily:'var(--font-mono)'}}>{b.bucket}</div>
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+
+            {/* Top risk */}
+            <section className="glass-panel" style={{padding:'20px 24px', borderRadius:14}}>
+              <h2 style={{fontSize:15, fontWeight:600, color:'var(--text-primary)', margin:'0 0 4px'}}>🔥 Top risk vessels</h2>
+              <p style={{fontSize:11, color:'var(--text-secondary)', margin:'0 0 18px'}}>Highest scoring entities right now</p>
+              <div style={{display:'flex', flexDirection:'column', gap:9}}>
+                {ADMIN_STATS.topRisk.map((v,i) => (
+                  <div key={v.id} style={{display:'flex', alignItems:'center', gap:12, padding:'10px 14px', background:'rgba(255,255,255,0.5)', borderRadius:9, border:'1px solid var(--border)'}}>
+                    <div style={{width:24, height:24, borderRadius:'50%', background:'rgba(38,52,68,0.06)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, fontWeight:700, color:'var(--text-secondary)', flexShrink:0}}>{i+1}</div>
+                    <span style={{fontSize:13, color:'var(--text-primary)', fontWeight:500, flex:1, minWidth:0, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>{v.name}</span>
+                    <div style={{flex:1.5, height:6, background:'rgba(38,52,68,0.07)', borderRadius:3, overflow:'hidden', minWidth:80}}>
+                      <div style={{height:'100%', width:`${v.risk}%`, background: v.risk>=75 ? 'linear-gradient(90deg, #d94f4f, #d68b3a)' : v.risk>=40 ? 'linear-gradient(90deg, #d68b3a, #f0b964)' : 'linear-gradient(90deg, #5b8def, #2fb8a3)', borderRadius:3, transition:'width 0.6s ease'}}/>
+                    </div>
+                    <span style={{fontFamily:'var(--font-mono)', fontSize:13, color:'var(--text-primary)', fontWeight:700, width:32, textAlign:'right', flexShrink:0}}>{v.risk}</span>
+                  </div>
+                ))}
+              </div>
+            </section>
+          </div>
+        )}
+
+        {tab === 'opsswarm' && (
+          <div style={{display:'flex', alignItems:'center', justifyContent:'center', height:'100%', minHeight:300}}>
+            <div className="glass-panel" style={{padding:'40px 50px', borderRadius:16, textAlign:'center', maxWidth:420}}>
+              <div style={{fontSize:48, marginBottom:14}}>⚡</div>
+              <h2 style={{fontSize:18, fontWeight:600, color:'var(--text-primary)', margin:'0 0 8px'}}>Ops Swarm</h2>
+              <p style={{fontSize:13, color:'var(--text-secondary)', lineHeight:1.55, margin:0}}>Multi-agent coordination view — coming after launch. Will let you observe live agent traces as they investigate flagged vessels.</p>
+              <div style={{marginTop:16, display:'inline-flex', alignItems:'center', gap:6, padding:'5px 11px', borderRadius:20, background:'rgba(91,141,239,0.10)', border:'1px solid rgba(91,141,239,0.20)', fontSize:11, color:'#3a64c4', fontWeight:600}}>🚧 Coming soon</div>
+            </div>
+          </div>
+        )}
+        </div>
+      </div>
+
+      {/* Responsive */}
+      <style>{`
+        @media (max-width: 760px) {
+          .admin-mobile-menu { display: flex !important; }
+          .admin-sidebar { position: absolute; top: 0; bottom: 0; left: 0; z-index: 10; transform: translateX(${sidebarOpen?'0':'-100%'}); transition: transform 0.25s ease; box-shadow: 4px 0 20px rgba(38,52,68,0.12); }
+        }
+      `}</style>
+    </div>
+  );
+}
+/* ─── TWEAKS PANEL ────────────────────────────────────────── */
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "variant": "glass",
+  "accentColor": "#38bdf8",
+  "panelOpacity": 82,
+  "showGlowEffects": true,
+  "mapTiles": "dark"
+}/*EDITMODE-END*/;
+
+/* ─── MAIN APP ────────────────────────────────────────────── */
+function App() {
+  const [loading, setLoading] = useState(true);
+  const [showAdmin, setShowAdmin] = useState(false);
+  const [selectedVessel, setSelectedVessel] = useState(null);
+  const [trailOffset, setTrailOffset] = useState(0);
+  const [shadowFilter, setShadowFilter] = useState(false);
+  const [riskFilter, setRiskFilter] = useState(0);
+  const [showRiskPanel, setShowRiskPanel] = useState(false);
+  const [showLayerPanel, setShowLayerPanel] = useState(false);
+  const [panels, setPanels] = useState({ news: false, arrivals: false, journal: false, search: false });
+
+  const [t, setTweak] = useTweaks(TWEAK_DEFAULTS);
+
+  useEffect(() => {
+    const t = setTimeout(() => setLoading(false), 2600);
+    return () => clearTimeout(t);
+  }, []);
+
+  // Restore from localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem('oceansxTrailOffset');
+    if (saved) setTrailOffset(+saved);
+  }, []);
+  useEffect(() => { localStorage.setItem('oceansxTrailOffset', trailOffset); }, [trailOffset]);
+
+  const toggle = (panel) => {
+    setPanels(p => {
+      const newVal = !p[panel];
+      return { news: false, arrivals: false, journal: false, search: false, [panel]: newVal };
+    });
+  };
+
+  const handleVesselSelect = (vessel) => {
+    setSelectedVessel(vessel);
+    if (vessel) setPanels({ news: false, arrivals: false, journal: false, search: false });
+  };
+
+  const activeLeftPanel = panels.news ? 'news' : panels.arrivals ? 'arrivals' : panels.journal ? 'journal' : null;
+
+  if (showAdmin) return <AdminApp onBack={() => setShowAdmin(false)}/>;
+
+  return (
+    <>
+      <LoadingScreen visible={loading}/>
+      {!loading && (
+        <div style={{ position:'fixed', inset:0, zIndex:10, pointerEvents:'none', animation:'fadeIn 0.5s ease' }}>
+          {/* MAP */}
+          <div style={{pointerEvents:'auto'}}>
+            <MapLayer
+              onVesselClick={handleVesselSelect}
+              selectedVessel={selectedVessel}
+              shadowFilter={shadowFilter}
+              riskFilter={riskFilter}
+            />
+          </div>
+
+          {/* HEADER */}
+          <Header vesselCount={VESSELS.length} lastUpdate="14:32:07" onAdminClick={() => setShowAdmin(true)}/>
+
+          {/* STATUS BAR */}
+          <StatusBar shadowFilter={shadowFilter} riskFilter={riskFilter}/>
+
+          {/* LEFT DRAWERS — only one open at a time */}
+          {activeLeftPanel === 'news' && (
+            <div style={{position:'absolute', top:0, bottom:0, left:0, zIndex:600, pointerEvents:'auto'}}>
+              <NewsDrawer onClose={() => toggle('news')} onVesselSearch={(e) => { toggle('search'); }}/>
+            </div>
+          )}
+          {activeLeftPanel === 'arrivals' && (
+            <div style={{position:'absolute', top:0, bottom:0, left:0, zIndex:600, pointerEvents:'auto'}}>
+              <ArrivalsDrawer onClose={() => toggle('arrivals')} onVesselSelect={handleVesselSelect}/>
+            </div>
+          )}
+          {activeLeftPanel === 'journal' && (
+            <div style={{position:'absolute', top:0, bottom:0, left:0, zIndex:600, pointerEvents:'auto'}}>
+              <JournalDrawer onClose={() => toggle('journal')}/>
+            </div>
+          )}
+
+          {/* SEARCH */}
+          {panels.search && (
+            <div style={{pointerEvents:'auto'}}>
+              <SearchOverlay onClose={() => toggle('search')} onVesselSelect={handleVesselSelect}/>
+            </div>
+          )}
+
+          {/* RIGHT TOOLBAR */}
+          <RightToolbar
+            panels={panels} toggle={toggle}
+            shadowFilter={shadowFilter} toggleShadow={() => setShadowFilter(p => !p)}
+            riskFilter={riskFilter} setRiskFilter={setRiskFilter}
+            showRiskPanel={showRiskPanel} setShowRiskPanel={setShowRiskPanel}
+            showLayerPanel={showLayerPanel} setShowLayerPanel={setShowLayerPanel}
+          />
+
+          {/* VESSEL DETAIL PANEL */}
+          {selectedVessel && (
+            <div style={{position:'absolute', top:44, bottom:0, right:0, zIndex:600, pointerEvents:'auto'}}>
+              <VesselDetailPanel vessel={selectedVessel} onClose={() => setSelectedVessel(null)}/>
+            </div>
+          )}
+
+          {/* TIMELINE SCRUBBER (only when vessel selected) */}
+          {selectedVessel && (
+            <TimelineScrubber offset={trailOffset} setOffset={setTrailOffset}/>
+          )}
+
+          {/* TWEAKS PANEL */}
+          <TweaksPanel>
+            <TweakSection label="Visual Style"/>
+            <TweakRadio  label="Variant" value={t.variant} options={['glass','matte','terminal']} onChange={v => setTweak('variant', v)}/>
+            <TweakColor  label="Accent" value={t.accentColor} onChange={v => setTweak('accentColor', v)}/>
+            <TweakSlider label="Panel opacity" value={t.panelOpacity} min={50} max={98} step={1} unit="%" onChange={v => setTweak('panelOpacity', v)}/>
+            <TweakToggle label="Glow effects" value={t.showGlowEffects} onChange={v => setTweak('showGlowEffects', v)}/>
+            <TweakSection label="Map"/>
+            <TweakRadio  label="Tiles" value={t.mapTiles} options={['dark','light','satellite']} onChange={v => setTweak('mapTiles', v)}/>
+          </TweaksPanel>
+        </div>
+      )}
+    </>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
