@@ -106,6 +106,10 @@ def create_app() -> FastAPI:
     app.include_router(sanctions.router, prefix="/api")
     app.include_router(search.router, prefix="/api")
 
+    # Phase 5 routers
+    from app.routers import risk
+    app.include_router(risk.router, prefix="/api")
+
     @app.get("/api/health", tags=["meta"])
     async def health():
         return {"status": "ok", "service": "seam-api"}
