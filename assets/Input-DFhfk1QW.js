@@ -1,0 +1,1 @@
+import{r as p,j as t}from"./index-DFNhjZjJ.js";const i=p.forwardRef(function({leadingIcon:e,trailingIcon:n,variant:s="default",size:o="md",className:r="",...l},a){const u=["input",s!=="default"&&s,o==="lg"&&"lg",r].filter(Boolean).join(" ");return t.jsxs("label",{className:u,children:[e,t.jsx("input",{ref:a,...l}),n]})});export{i as I};

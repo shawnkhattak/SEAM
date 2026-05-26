@@ -1,0 +1,1 @@
+import{j as a}from"./index-DFNhjZjJ.js";function o({width:e="100%",height:s=14,rounded:r=6,className:i="",style:t}){return a.jsx("span",{className:`skel ${i}`.trim(),style:{display:"inline-block",width:e,height:s,borderRadius:r,...t},"aria-hidden":"true"})}export{o as S};

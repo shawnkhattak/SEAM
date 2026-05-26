@@ -1,0 +1,1 @@
+const n=new EventTarget;function a(e){n.dispatchEvent(new CustomEvent("center",{detail:e}))}function c(e){const t=r=>e(r.detail);return n.addEventListener("center",t),()=>n.removeEventListener("center",t)}export{c as o,a as r};

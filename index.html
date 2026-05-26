@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="SEAM is a maritime intelligence platform for vessel tracking, risk monitoring, sanctions workflows, and operational visibility." />
+    <title>SEAM — Maritime Intelligence</title>
+    <link rel="icon" type="image/svg+xml" href="./seam-mark.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" />
+    <script type="module" crossorigin src="./assets/index-DFNhjZjJ.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-Di8V1B3t.css">
+  </head>
+  <body>
+    <script>
+      (function() {
+        var redirect = sessionStorage.getItem('seam-redirect');
+        if (redirect) {
+          sessionStorage.removeItem('seam-redirect');
+          window.history.replaceState(null, '', redirect);
+        }
+        var base = '/SEAM';
+        if (!redirect && window.location.pathname.startsWith(base)) {
+          var real = window.location.pathname.slice(base.length) || '/';
+          window.history.replaceState(null, '', real + window.location.search + window.location.hash);
+        }
+      })();
+    </script>
+    <div id="root"></div>
+  </body>
+</html>
